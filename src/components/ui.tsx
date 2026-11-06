@@ -63,6 +63,23 @@ export function TopBar({ title, back, actions }: { title?: string; back?: string
   )
 }
 
+/** Shown when a link points to a facility that does not exist (or is not public). */
+export function NotFound({ back = '/map' }: { back?: string }) {
+  const { t } = useTranslation()
+  const nav = useNavigate()
+  return (
+    <>
+      <TopBar back={back} />
+      <Stack alignItems="center" spacing={2} sx={{ py: 8, px: 3, textAlign: 'center' }}>
+        <Icon name="location_off" size={56} color="#9AA7B5" />
+        <Typography variant="h3">{t('common.notFound')}</Typography>
+        <Typography color="text.secondary">{t('common.notFoundHint')}</Typography>
+        <Button variant="contained" startIcon={<Icon name="search" />} onClick={() => nav('/map')}>{t('login.backToSearch')}</Button>
+      </Stack>
+    </>
+  )
+}
+
 /** Bottom action bar that respects the phone's home-indicator area. */
 export function BottomBar({ children }: { children: ReactNode }) {
   return (
@@ -132,7 +149,7 @@ export function TagChips({ r }: { r: ScoreResult }) {
 export function Stars({ value, onChange, size = 'medium' }: { value: number; onChange?: (v: number) => void; size?: 'small' | 'medium' | 'large' }) {
   return (
     <MuiRating value={value} precision={onChange ? 1 : 0.5} readOnly={!onChange} size={size}
-      onChange={(_, v) => onChange && onChange(v || 0)}
+      onChange={(_, v) => { if (onChange && v) onChange(v) }}
       icon={<Icon name="star" fill color="#F08A1C" size={size === 'large' ? 36 : size === 'small' ? 18 : 26} />}
       emptyIcon={<Icon name="star" color="#B8C1CC" size={size === 'large' ? 36 : size === 'small' ? 18 : 26} />} />
   )

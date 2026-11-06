@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, Button, Card, CardContent, Chip, Container, FormControl, FormControlLabel, IconButton, InputLabel, LinearProgress, MenuItem, Select, Stack, Switch, TextField, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -39,6 +39,13 @@ export default function DsoWizard() {
   const [step, setStep] = useState(0)
   const [cam, setCam] = useState(false)
   const [msg, setMsg] = useState('')
+  const chipRow = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const row = chipRow.current
+    const chip = row?.children[step] as HTMLElement | undefined
+    if (row && chip) row.scrollTo({ left: chip.offsetLeft - row.clientWidth / 2 + chip.clientWidth / 2, behavior: 'smooth' })
+    window.scrollTo(0, 0)
+  }, [step])
   const steps = t('wiz.steps', { returnObjects: true }) as string[]
   const set = <K extends keyof Facility>(k: K, v: Facility[K]) => setF(prev => ({ ...prev, [k]: v }))
   const score = useMemo(() => computeScore(f, db.checkins), [f, db.checkins])
@@ -55,7 +62,7 @@ export default function DsoWizard() {
     if (missingPhotos.length) m.push(t('common.photos'))
     if (f.lat == null) m.push(steps[2])
     if (!f.sports.length) m.push(t('wiz.sports'))
-    if (CONDITION_KEYS.some(k => !f.condition[k])) m.push(steps[5])
+    if (CONDITION_KEYS.some(k => f.condition[k] === undefined)) m.push(steps[5])
     return m
   }
 
@@ -82,13 +89,14 @@ export default function DsoWizard() {
 
   function save(andSubmit = false) {
     const changed = existing ? (Object.keys(f) as (keyof Facility)[]).filter(k => JSON.stringify(f[k]) !== JSON.stringify(existing[k]) && k !== 'updatedAt') : []
-    saveFacility(f, user.id, changed as string[])
     if (andSubmit) {
       const m = missing()
-      if (m.length) { setMsg(t('wiz.missing', { list: m.join(', ') })); return }
+      if (m.length) { setMsg(t('wiz.missing', { list: m.join(', ') })); window.scrollTo(0, 0); return }
+      saveFacility(f, user.id, changed as string[])
       submitFacility(f.id, user.id)
       nav('/dso')
     } else {
+      saveFacility(f, user.id, changed as string[])
       if (!existing) nav(`/dso/edit/${f.id}`, { replace: true })
       setMsg(t('wiz.saved'))
     }
@@ -163,6 +171,7 @@ export default function DsoWizard() {
       <Box sx={{ height: 380, borderRadius: '16px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
         <MapView pins={f.lat != null ? [{ id: 'pin', lat: f.lat, lng: f.lng!, color: brand.orange, icon: typeIcon(f.type) }] : []} draggablePinId="pin"
           onDrag={movePin} onMapClick={(lat, lng) => f.lat == null && movePin(lat, lng)}
+          startAt={districtOf(f.district) ? [districtOf(f.district)!.lat, districtOf(f.district)!.lng] : undefined}
           center={f.lat != null ? [f.lat, f.lng!] : undefined}
           extraPins={f.gpsLat != null && (f.gpsLat !== f.lat || f.gpsLng !== f.lng) ? [{ id: 'gps', lat: f.gpsLat, lng: f.gpsLng!, color: '#9E9E9E', icon: 'my_location' }] : []} />
       </Box>
@@ -256,7 +265,14 @@ export default function DsoWizard() {
               <Typography fontWeight={500}>{t(`cond.${k}`)}</Typography>
               <Typography variant="caption" color="text.secondary">{t(`condHint.${k}`)}</Typography>
             </Box>
-            <Stars value={f.condition[k] || 0} onChange={v => set('condition', { ...f.condition, [k]: v })} size="large" />
+            <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} gap={0.5}>
+              <Box sx={{ opacity: f.condition[k] === 0 ? 0.35 : 1, pointerEvents: f.condition[k] === 0 ? 'none' : 'auto' }}>
+                <Stars value={f.condition[k] || 0} onChange={v => set('condition', { ...f.condition, [k]: v })} size="large" />
+              </Box>
+              <Chip size="small" label={t('common.notAvailable')} icon={<Icon name={f.condition[k] === 0 ? 'check' : 'block'} size={16} />}
+                color={f.condition[k] === 0 ? 'primary' : 'default'} variant={f.condition[k] === 0 ? 'filled' : 'outlined'}
+                onClick={() => set('condition', { ...f.condition, [k]: f.condition[k] === 0 ? undefined : 0 })} />
+            </Stack>
           </Stack>
         </CardContent></Card>
       ))}
@@ -286,9 +302,9 @@ export default function DsoWizard() {
       <TopBar back="/dso" title={existing ? f.name || t('dso.add') : t('dso.add')} actions={existing ? <Box sx={{ display: { xs: 'none', sm: 'block' } }}><StatusChip status={f.status} /></Box> : undefined} />
       <LinearProgress variant="determinate" value={((step + 1) / steps.length) * 100} sx={{ height: 4 }} />
       <Container maxWidth="md" sx={{ py: 2, pb: 14, px: { xs: 1.5, sm: 3 } }}>
-        <Stack direction="row" gap={0.75} sx={{ overflowX: 'auto', pb: 1.5 }}>
+        <Stack ref={chipRow} direction="row" gap={0.75} sx={{ overflowX: 'auto', pb: 1.5 }}>
           {steps.map((s, i) => (
-            <Chip key={s} label={`${i + 1}. ${s}`} onClick={() => setStep(i)} ref={(el: HTMLDivElement | null) => { if (el && i === step) el.scrollIntoView({ block: 'nearest', inline: 'center' }) }} color={i === step ? 'primary' : 'default'} variant={i === step ? 'filled' : 'outlined'} sx={{ flexShrink: 0 }} />
+            <Chip key={s} label={`${i + 1}. ${s}`} onClick={() => setStep(i)} color={i === step ? 'primary' : 'default'} variant={i === step ? 'filled' : 'outlined'} sx={{ flexShrink: 0 }} />
           ))}
         </Stack>
         {lastReturned && <Alert severity="warning" icon={<Icon name="comment" />} sx={{ mb: 2 }}><b>{t('dso.stateComment')}:</b> {lastReturned.comment}</Alert>}

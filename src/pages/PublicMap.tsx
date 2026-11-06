@@ -211,12 +211,13 @@ function FacilityCard({ f, me, onClick, onClose, elevated }: { f: Facility; me: 
         <Box sx={{ p: 1.5, flex: 1, minWidth: 0, pr: 4 }}>
           <Typography fontWeight={500} sx={{ lineHeight: 1.25 }}>{f.name}</Typography>
           <Typography variant="body2" color="text.secondary" noWrap>
-            {t(`type.${f.type}`)} · {f.ward}{tal ? `, ${i18n.language === 'gu' ? tal.gu : tal.en}` : ''}{dist != null ? ` · ${(dist / 1000).toFixed(1)} ${t('common.km')}` : ''}
+            {t(`type.${f.type}`)} · {f.ward}{tal ? `, ${i18n.language === 'gu' ? tal.gu : tal.en}` : ''}
           </Typography>
           <Stack direction="row" alignItems="center" gap={0.5} sx={{ mt: 0.5 }}>
             {r ? <><Stars value={r.avg} size="small" /><Typography variant="caption">({r.count})</Typography></> : <Typography variant="caption" color="text.secondary">{t('public.noRatings')}</Typography>}
           </Stack>
           <Stack direction="row" gap={0.5} sx={{ mt: 0.75 }} flexWrap="wrap">
+            {dist != null && <Chip size="small" icon={<Icon name="near_me" size={14} />} label={`${(dist / 1000).toFixed(1)} ${t('common.km')}`} sx={{ height: 22, bgcolor: '#DDEBFA', color: '#0D4A80', fontWeight: 700 }} />}
             <Chip size="small" label={open ? t('public.openNow') : t('public.closed')} sx={{ height: 22, bgcolor: open ? '#DCF2E1' : '#ECEFF3', color: open ? '#1D6B33' : '#43474E' }} />
             <Chip size="small" label={t(`fee.${f.feeType}`)} sx={{ height: 22 }} />
             {f.cwg !== 'none' && <Chip size="small" label="CWG 2030" sx={{ height: 22, bgcolor: '#FFE7CC', color: '#8A4B00' }} />}

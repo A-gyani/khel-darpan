@@ -6,7 +6,7 @@
     "logout": "Log out", "language": "ગુજરાતી", "loading": "Loading…", "none": "None", "view": "View", "edit": "Edit", "done": "Done",
     "map": "Map", "list": "List", "km": "km", "m": "m", "optional": "optional", "required": "required", "photos": "Photos",
     "details": "Details", "history": "History", "call": "Call", "directions": "Get directions", "noData": "No data", "print": "Print",
-    "days": "days", "resetDemo": "Reset demo data", "of": "of"
+    "days": "days", "resetDemo": "Reset demo data", "notFound": "Facility not found", "notFoundHint": "The link may be wrong, or the facility is not yet approved.", "notAvailable": "Not available", "of": "of"
   },
   "login": {
     "title": "Sign in", "subtitle": "For District Sports Officers and State officers", "email": "Email", "password": "Password",
@@ -78,7 +78,7 @@
     "sent": "Complaint registered", "refNo": "Your reference number", "refHint": "The District Sports Officer will act on it. If it is not resolved in 7 days, it goes to the State office.",
     "overall": "Overall", "cleanliness": "Cleanliness", "onTime": "Open on time", "staff": "Staff behaviour", "comment": "Comment (optional)",
     "rated": "Thanks for rating", "openPage": "View facility details", "poster": "QR poster", "scanToCheckIn": "Scan to check in, rate or report a problem",
-    "sendReport": "Send complaint", "sendRating": "Send rating"
+    "sendReport": "Send complaint", "moreActions": "Check in, report or rate", "rateLimit": "You have already rated this facility today. You can rate it again tomorrow.", "sendRating": "Send rating"
   },
   "gcat": {
     "closed_when_should_be_open": "Closed when it should be open", "damaged": "Damaged", "unsafe": "Unsafe", "wrong_info": "Wrong information",
@@ -117,7 +117,7 @@
     "flags": "Flags", "noFlags": "No flags", "bySport": "Facilities by sport", "byType": "Facilities by type", "bands": "Health Score bands",
     "checkinsTrend": "QR check-ins (last 4 weeks)", "female": "Female", "male": "Male", "otherNa": "Other / not said",
     "gByCat": "Complaints by category", "cwgReady": "CWG 2030 sport readiness", "cwgNote": "Provisional sport list – confirm with official CWG 2030 programme",
-    "facilities": "Facilities", "good": "Good", "poor": "Needs work", "gap": "Gap", "repairList": "Repair priority (high use, poor condition)",
+    "facilities": "Facilities", "cwgRow": "{{total}} facilities · {{good}} good · {{poor}} need work", "good": "Good", "poor": "Needs work", "gap": "Gap", "repairList": "Repair priority (high use, poor condition)",
     "underusedList": "Underused (good condition, low use)", "progress": "Progress", "allDistricts": "All districts", "gujarat": "Gujarat", "mapped": "Mapped", "approved": "Approved",
     "returnRate": "Returned", "onTime": "Complaints closed in 7 days", "lastActivity": "Last activity", "allClear": "Nothing in the queue",
     "submittedOn": "Submitted", "score": "Score", "use": "Use", "condition": "Condition", "action": "Action", "by": "by", "rating": "Citizen rating"

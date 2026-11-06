@@ -47,7 +47,7 @@ function ClickHandler({ onClick }: { onClick?: (lat: number, lng: number) => voi
   return null
 }
 
-export function MapView({ pins, onPinClick, height = '100%', draggablePinId, onDrag, onMapClick, center, extraPins, focus }: {
+export function MapView({ pins, onPinClick, height = '100%', draggablePinId, onDrag, onMapClick, center, extraPins, focus, startAt }: {
   pins: MapPin[]
   onPinClick?: (id: string) => void
   height?: number | string
@@ -58,9 +58,11 @@ export function MapView({ pins, onPinClick, height = '100%', draggablePinId, onD
   extraPins?: MapPin[]
   /** points the map should zoom to show (e.g. user + nearest facilities) */
   focus?: [number, number][]
+  /** where to open when there are no pins (e.g. the DSO's district) */
+  startAt?: [number, number]
 }) {
   return (
-    <MapContainer center={[23.0225, 72.5714]} zoom={11} style={{ height, width: '100%' }} scrollWheelZoom
+    <MapContainer center={startAt || [23.0225, 72.5714]} zoom={startAt ? 12 : 11} style={{ height, width: '100%' }} scrollWheelZoom
       minZoom={MIN_ZOOM} maxBounds={GUJARAT_BOUNDS} maxBoundsViscosity={1}>
       <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <Fit pins={pins} center={center} focus={focus} />

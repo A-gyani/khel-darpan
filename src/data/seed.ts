@@ -2,7 +2,7 @@
 import type { DB, Facility, CheckIn, Grievance, Rating, Photo, PhotoCaption, Timings, User, FacilityType, Ownership, CwgTag, Status } from '../lib/types'
 import { CONDITION_KEYS, SPORTS, districtOf } from '../lib/constants'
 
-export const SEED_VERSION = 7
+export const SEED_VERSION = 8
 
 // Deterministic random so the demo looks the same every time
 let s = 42
@@ -128,7 +128,8 @@ export function buildSeed(): DB {
       ...(sp.cwg === 'venue' ? ['hostel'] : []),
     ]
     const status = sp.status
-    const createdAt = iso(40 - i)
+    const ago = 6 + (i * 7) % 34 // days ago, always in the past
+    const createdAt = iso(ago)
     const f: Facility = {
       id: `f${String(i + 1).padStart(3, '0')}`, demo: true, name: sp.name, type: sp.type, ownership: sp.own,
       district: dist, taluka: sp.taluka, ward: sp.ward, address: `${sp.ward}, ${districtOf(dist)?.en} district`,
@@ -146,8 +147,8 @@ export function buildSeed(): DB {
       weeklyUsersEstimate: sp.use, athletesTrainedLastYear: sp.own === 'state_sag' ? int(40, 120) : sp.own === 'district' ? int(10, 40) : null,
       cwg: sp.cwg || 'none', photos: makePhotos(sp, i, i === 16 || i === 19 || i === 30).map(p => ({ ...p, capturedBy: dso })),
       status, createdBy: dso, createdAt, updatedAt: createdAt,
-      submittedAt: status === 'draft' ? null : iso(30 - i), approvedAt: status === 'approved' ? iso(25 - i) : null,
-      lastVerifiedAt: status === 'approved' ? iso(25 - i) : null, published: null,
+      submittedAt: status === 'draft' ? null : iso(ago - 3), approvedAt: status === 'approved' ? iso(ago - 5) : null,
+      lastVerifiedAt: status === 'approved' ? iso(ago - 5) : null, published: null,
     }
     return f
   })

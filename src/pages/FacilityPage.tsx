@@ -2,7 +2,7 @@ import { Alert, Box, Button, Card, CardContent, Chip, Container, Stack, Typograp
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Icon, TopBar, Stars, DemoBadge, Section } from '../components/ui'
+import { Icon, TopBar, Stars, DemoBadge, Section, NotFound } from '../components/ui'
 import { useDb, publicFacilities, avgRating } from '../data/store'
 import { DAYS, TALUKAS } from '../lib/constants'
 import { directionsUrl } from '../lib/geo'
@@ -85,7 +85,7 @@ export default function FacilityPage() {
   const db = useDb()
   const raw = db.facilities.find(x => x.id === id)
   const f = publicFacilities(db).find(x => x.id === id)
-  if (!f) return <><TopBar back="/map" /><Container sx={{ py: 4 }}><Typography>—</Typography></Container></>
+  if (!f) return <NotFound />
   const r = avgRating(db, f.id)
 
   return (

@@ -10,7 +10,7 @@ import { ESCALATE_AFTER_DAYS, TALUKAS, districtOf, placeName } from '../lib/cons
 import type { Status } from '../lib/types'
 import { typeIcon } from './PublicMap'
 
-export const daysSince = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / 864e5)
+export const daysSince = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 864e5))
 
 export default function DsoHome() {
   const { t, i18n } = useTranslation()
@@ -69,7 +69,7 @@ export default function DsoHome() {
 
         {tab === 1 && (
           <Stack direction={{ xs: 'column', md: 'row' }} gap={2}>
-            <Box sx={{ flex: 1, height: { xs: 280, md: 560 }, borderRadius: '16px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ flex: { md: 1 }, flexShrink: 0, height: { xs: 280, md: 560 }, borderRadius: '16px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
               <MapView pins={mine.filter(f => f.lat != null).map(f => ({ id: f.id, lat: f.lat!, lng: f.lng!, color: BAND_COLORS[computeScore(f, db.checkins).band], icon: typeIcon(f.type), label: f.name }))}
                 onPinClick={id => nav(`/dso/edit/${id}`)} />
             </Box>
@@ -78,18 +78,21 @@ export default function DsoHome() {
                 const r = computeScore(f, db.checkins)
                 const tal = TALUKAS.find(x => x.id === f.taluka)
                 return (
-                  <Card key={f.id}>
-                    <CardActionArea onClick={() => nav(`/dso/edit/${f.id}`)} sx={{ p: 1.5, display: 'flex', gap: 1.5, justifyContent: 'flex-start' }}>
+                  <Card key={f.id} sx={{ display: 'flex', alignItems: 'stretch' }}>
+                    <CardActionArea onClick={() => nav(`/dso/edit/${f.id}`)} sx={{ p: 1.5, display: 'flex', gap: 1.5, justifyContent: 'flex-start', flex: 1, minWidth: 0 }}>
                       <ScoreBadge r={r} />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography fontWeight={500} noWrap>{f.name}</Typography>
+                        <Typography fontWeight={500} sx={{ lineHeight: 1.25 }}>{f.name}</Typography>
                         <Typography variant="body2" color="text.secondary" noWrap>{t(`type.${f.type}`)} · {tal ? (i18n.language === 'gu' ? tal.gu : tal.en) : ''}</Typography>
                         <Stack direction="row" gap={0.5} sx={{ mt: 0.5 }} flexWrap="wrap"><StatusChip status={f.status} /><TagChips r={r} />{f.demo && <DemoBadge />}</Stack>
                       </Box>
-                      {f.status === 'approved' && (
-                        <Button size="small" variant="text" startIcon={<Icon name="qr_code_2" />} onClick={e => { e.stopPropagation(); nav(`/poster/${f.id}`) }}>QR</Button>
-                      )}
                     </CardActionArea>
+                    {f.status === 'approved' && (
+                      <Button size="small" variant="text" onClick={() => nav(`/poster/${f.id}`)} aria-label={t('dso.poster')}
+                        sx={{ flexDirection: 'column', minWidth: 56, borderRadius: 0, borderLeft: '1px solid', borderColor: 'divider', fontSize: 12, px: 1 }}>
+                        <Icon name="qr_code_2" />QR
+                      </Button>
+                    )}
                   </Card>
                 )
               })}

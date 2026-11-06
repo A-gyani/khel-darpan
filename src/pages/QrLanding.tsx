@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Alert, Box, Button, Card, CardActionArea, Chip, Container, Stack, TextField, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Icon, TopBar, Stars } from '../components/ui'
-import { useDb, publicFacilities, addCheckIn, addGrievance, addRating, checkInsLeftToday } from '../data/store'
+import { Icon, TopBar, Stars, NotFound } from '../components/ui'
+import { useDb, publicFacilities, addCheckIn, addGrievance, addRating, checkInsLeftToday, ratedToday } from '../data/store'
 import { GRIEVANCE_CATEGORIES } from '../lib/constants'
 import type { CheckIn, GrievanceCategory } from '../lib/types'
 
@@ -42,7 +42,14 @@ export default function QrLanding() {
   const [photo, setPhoto] = useState<string | null>(null)
   const [rt, setRt] = useState({ overall: 0, cleanliness: 0, onTime: 0, staff: 0, comment: '' })
 
-  if (!f) return <><TopBar back="/map" /><Container sx={{ py: 4 }}><Typography>—</Typography></Container></>
+  // Start each screen fresh: the same page component is reused when moving between QR home, check-in, report and rate
+  useEffect(() => {
+    setDone(''); setCi({ groupSize: 1 }); setRef(''); setCat(''); setDesc(''); setPhoto(null)
+    setRt({ overall: 0, cleanliness: 0, onTime: 0, staff: 0, comment: '' })
+    window.scrollTo(0, 0)
+  }, [id, mode])
+
+  if (!f) return <NotFound />
   const base = `/q/${f.id}`
 
   function readPhoto(file: File) {
@@ -76,6 +83,7 @@ export default function QrLanding() {
       <Typography variant="h2">{title}</Typography>
       {body}
       <Button variant="outlined" onClick={() => nav(`/f/${f.id}`)} endIcon={<Icon name="arrow_forward" />}>{t('qr.openPage')}</Button>
+      <Button variant="text" onClick={() => nav(base)} startIcon={<Icon name="qr_code_2" />}>{t('qr.moreActions')}</Button>
     </Stack>
   )
 
@@ -113,9 +121,8 @@ export default function QrLanding() {
   } else if (mode === 'checkin') {
     const left = checkInsLeftToday(f.id)
     const ok = ci.sport && ci.role && ci.gender && ci.ageGroup
-    content = (
+    content = left <= 0 ? doneScreen('info', t('qr.thanks'), <Alert severity="info">{t('qr.limit')}</Alert>) : (
       <Stack spacing={3}>
-        {left <= 0 && <Alert severity="info">{t('qr.limit')}</Alert>}
         <ChipPick label={t('qr.sport')} options={f.sports} value={ci.sport || ''} onChange={v => setCi({ ...ci, sport: v })} render={v => t(`sport.${v}`)} />
         <ChipPick label={t('qr.role')} options={['player', 'coach', 'parent', 'visitor'] as const as unknown as CheckIn['role'][]} value={ci.role || ''} onChange={v => setCi({ ...ci, role: v })} render={v => t(`qr.roles.${v}`)} />
         <ChipPick label={t('qr.gender')} options={['female', 'male', 'other', 'na'] as CheckIn['gender'][]} value={ci.gender || ''} onChange={v => setCi({ ...ci, gender: v })} render={v => t(`qr.genders.${v}`)} />
@@ -157,6 +164,8 @@ export default function QrLanding() {
         </Button>
       </Stack>
     )
+  } else if (mode === 'rate' && ratedToday(f.id)) {
+    content = doneScreen('star', t('qr.rated'), <Alert severity="info">{t('qr.rateLimit')}</Alert>)
   } else if (mode === 'rate') {
     const row = (k: 'overall' | 'cleanliness' | 'onTime' | 'staff', big = false) => (
       <Stack direction="row" alignItems="center" justifyContent="space-between" gap={2}>

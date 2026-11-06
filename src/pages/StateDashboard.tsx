@@ -179,7 +179,7 @@ export default function StateDashboard() {
             <Stack direction="row" gap={1} flexWrap="wrap">
               {bandData.map(b => <Chip key={b.b} label={`${b.name}: ${b.n}`} sx={{ bgcolor: BAND_COLORS[b.b], color: '#fff' }} />)}
             </Stack>
-            <Stack direction="row" gap={2} flexWrap="wrap">
+            <Stack direction="row" gap={2} flexWrap="wrap" alignItems="flex-start">
               <ChartCard title={t('state.bySport')} icon="sports">
                 <ResponsiveContainer width="100%" height={Math.max(220, sportData.length * 26)}>
                   <BarChart data={sportData} layout="vertical" margin={{ left: 0, right: 8 }}>
@@ -188,16 +188,16 @@ export default function StateDashboard() {
                   </BarChart>
                 </ResponsiveContainer>
               </ChartCard>
-              <Stack gap={2} sx={{ flex: '1 1 420px', minWidth: 0 }}>
+              <Stack gap={2} sx={{ flex: '1 1 420px', minWidth: 0, '& > .MuiCard-root': { flex: 'none' } }}>
                 <ChartCard title={t('state.byType')} icon="category">
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={typeData}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={60} /><YAxis allowDecimals={false} /><Tooltip /><Bar dataKey="n" fill={C.orange} radius={[6, 6, 0, 0]} name={t('state.facilities')} /></BarChart>
+                  <ResponsiveContainer width="100%" height={Math.max(160, typeData.length * 28)}>
+                    <BarChart data={typeData} layout="vertical" margin={{ left: 0, right: 8 }}><CartesianGrid strokeDasharray="3 3" horizontal={false} /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="name" width={104} tick={{ fontSize: 11 }} interval={0} /><Tooltip /><Bar dataKey="n" fill={C.orange} radius={[0, 6, 6, 0]} name={t('state.facilities')} /></BarChart>
                   </ResponsiveContainer>
                 </ChartCard>
                 <ChartCard title={t('state.bands')} icon="health_metrics">
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={bandData}><XAxis dataKey="name" tick={{ fontSize: 11 }} /><YAxis allowDecimals={false} /><Tooltip />
-                      <Bar dataKey="n" radius={[6, 6, 0, 0]} name={t('state.facilities')}>{bandData.map(b => <Cell key={b.b} fill={BAND_COLORS[b.b]} />)}</Bar></BarChart>
+                  <ResponsiveContainer width="100%" height={150}>
+                    <BarChart data={bandData} layout="vertical" margin={{ left: 0, right: 8 }}><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="name" width={112} tick={{ fontSize: 11 }} interval={0} /><Tooltip />
+                      <Bar dataKey="n" radius={[0, 6, 6, 0]} name={t('state.facilities')}>{bandData.map(b => <Cell key={b.b} fill={BAND_COLORS[b.b]} />)}</Bar></BarChart>
                   </ResponsiveContainer>
                 </ChartCard>
               </Stack>
@@ -224,22 +224,19 @@ export default function StateDashboard() {
         )}
 
         {tab === 2 && (
-          <Stack gap={2}>
+          <Stack gap={2} sx={{ '& > .MuiCard-root': { flex: 'none' } }}>
             <ChartCard title={t('state.cwgReady')} icon="emoji_events" note={t('state.cwgNote')}>
-              <Table size="small">
-                <TableHead><TableRow><TableCell>{t('public.sport')}</TableCell><TableCell align="right">{t('state.facilities')}</TableCell><TableCell align="right">{t('state.good')}</TableCell><TableCell align="right">{t('state.poor')}</TableCell><TableCell /></TableRow></TableHead>
-                <TableBody>
-                  {cwg.map(row => (
-                    <TableRow key={row.s}>
-                      <TableCell>{t(`sport.${row.s}`)}</TableCell>
-                      <TableCell align="right">{row.total}</TableCell>
-                      <TableCell align="right">{row.good}</TableCell>
-                      <TableCell align="right">{row.poor}</TableCell>
-                      <TableCell>{row.total === 0 ? <Chip size="small" color="error" label={t('state.gap')} /> : row.good === 0 ? <Chip size="small" color="warning" label={t('state.poor')} /> : <Chip size="small" color="success" label={t('state.good')} />}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <Stack divider={<Box sx={{ borderTop: '1px solid', borderColor: 'divider' }} />}>
+                {cwg.map(row => (
+                  <Stack key={row.s} direction="row" alignItems="center" gap={1} sx={{ py: 1 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography fontWeight={500}>{t(`sport.${row.s}`)}</Typography>
+                      <Typography variant="caption" color="text.secondary">{t('state.cwgRow', { total: row.total, good: row.good, poor: row.poor })}</Typography>
+                    </Box>
+                    {row.total === 0 ? <Chip size="small" color="error" label={t('state.gap')} /> : row.good === 0 ? <Chip size="small" color="warning" label={t('state.poor')} /> : <Chip size="small" color="success" label={t('state.good')} />}
+                  </Stack>
+                ))}
+              </Stack>
             </ChartCard>
             <Stack direction="row" gap={2} flexWrap="wrap">
               <ChartCard title={t('state.repairList')} icon="construction">
@@ -259,39 +256,50 @@ export default function StateDashboard() {
         )}
 
         {tab === 3 && (
-          <Card sx={{ overflowX: 'auto' }}><Table size="small" sx={{ minWidth: 520 }}>
-            <TableHead><TableRow><TableCell>Ref</TableCell><TableCell>{t('state.facilities')}</TableCell><TableCell>{t('qr.category')}</TableCell><TableCell align="right">{t('common.days')}</TableCell><TableCell>Status</TableCell></TableRow></TableHead>
-            <TableBody>
-              {[...db.grievances].sort((a, b) => (a.status === b.status ? a.at.localeCompare(b.at) : a.status === 'open' ? -1 : 1)).map(g => {
-                const d = daysSince(g.at)
-                const od = g.status === 'open' && d > ESCALATE_AFTER_DAYS
-                return (
-                  <TableRow key={g.id} sx={{ bgcolor: od ? '#FDECEC' : undefined }}>
-                    <TableCell>{g.ref}</TableCell><TableCell>{fname(g.facilityId)}</TableCell><TableCell>{t(`gcat.${g.category}`)}</TableCell><TableCell align="right">{d}</TableCell>
-                    <TableCell>{g.status === 'resolved' ? <Chip size="small" color="success" label={t('dso.resolved')} /> : <Chip size="small" color={od ? 'error' : 'warning'} label={od ? t('dso.overdue') : t('dso.open')} />}</TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table></Card>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.25 }}>
+            {[...db.grievances].sort((a, b) => (a.status === b.status ? a.at.localeCompare(b.at) : a.status === 'open' ? -1 : 1)).map(g => {
+              const d = daysSince(g.at)
+              const od = g.status === 'open' && d > ESCALATE_AFTER_DAYS
+              const fac = db.facilities.find(x => x.id === g.facilityId)
+              return (
+                <Card key={g.id} sx={{ borderColor: od ? 'error.main' : undefined, bgcolor: od ? '#FFF7F7' : undefined }}>
+                  <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                    <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
+                      <Typography fontWeight={500} sx={{ flex: 1, minWidth: 0 }}>{t(`gcat.${g.category}`)}</Typography>
+                      {g.status === 'resolved' ? <Chip size="small" color="success" label={t('dso.resolved')} /> : <Chip size="small" color={od ? 'error' : 'warning'} label={od ? t('dso.overdue') : t('dso.open')} />}
+                    </Stack>
+                    <Typography variant="body2">{fname(g.facilityId)}</Typography>
+                    <Typography variant="caption" color="text.secondary">{g.ref} · {fac ? placeName(districtOf(fac.district), i18n.language) : ''} · {t('dso.daysOpen', { count: d })}</Typography>
+                    {g.description && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{g.description}</Typography>}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </Box>
         )}
 
         {tab === 4 && (
-          <Card sx={{ overflowX: 'auto' }}><Table size="small" sx={{ minWidth: 560 }}>
-            <TableHead><TableRow><TableCell>{dist ? t('public.taluka') : t('public.district')}</TableCell><TableCell align="right">{t('state.mapped')}</TableCell><TableCell align="right">{t('state.approved')}</TableCell><TableCell align="right">{t('state.returnRate')}</TableCell><TableCell align="right">{t('state.onTime')}</TableCell><TableCell>{t('state.lastActivity')}</TableCell></TableRow></TableHead>
-            <TableBody>
-              {progress.map(p => (
-                <TableRow key={p.tal.id}>
-                  <TableCell>{i18n.language === 'gu' ? p.tal.gu : p.tal.en}</TableCell>
-                  <TableCell align="right">{p.mapped}</TableCell>
-                  <TableCell align="right">{p.approved}</TableCell>
-                  <TableCell align="right">{p.returnedCount}</TableCell>
-                  <TableCell align="right">{p.gTotal ? `${p.onTime} / ${p.gTotal}` : '—'}</TableCell>
-                  <TableCell>{p.last ? `${daysSince(p.last)} ${t('common.days')}` : '—'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table></Card>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(3, 1fr)' }, gap: 1.25 }}>
+            {progress.map(p => {
+              const fig = (label: string, value: string | number) => (
+                <Box><Typography sx={{ fontSize: 20, fontWeight: 500, lineHeight: 1.2 }}>{value}</Typography><Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2, display: 'block' }}>{label}</Typography></Box>
+              )
+              return (
+                <Card key={p.tal.id}>
+                  <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                    <Typography fontWeight={500} sx={{ mb: 1 }}>{i18n.language === 'gu' ? p.tal.gu : p.tal.en}</Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.25 }}>
+                      {fig(t('state.mapped'), p.mapped)}
+                      {fig(t('state.approved'), p.approved)}
+                      {fig(t('state.returnRate'), p.returnedCount)}
+                      {fig(t('state.onTime'), p.gTotal ? `${p.onTime}/${p.gTotal}` : '—')}
+                      {fig(t('state.lastActivity'), p.last ? `${daysSince(p.last)} ${t('common.days')}` : '—')}
+                    </Box>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </Box>
         )}
 
         <Box sx={{ mt: 4, textAlign: 'right' }}>

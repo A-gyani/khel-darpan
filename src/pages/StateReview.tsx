@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Alert, Box, Button, Card, CardContent, Chip, Container, Stack, Tab, Tabs, TextField, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Icon, TopBar, ScoreBars, ScoreBadge, StatusChip, TagChips, Stars, useCurrentUser, Section, BottomBar } from '../components/ui'
+import { Icon, TopBar, ScoreBars, ScoreBadge, StatusChip, TagChips, Stars, useCurrentUser, Section, BottomBar, NotFound } from '../components/ui'
 import { MapView } from '../components/MapView'
 import { useDb, reviewFacility, avgRating } from '../data/store'
 import { computeScore } from '../lib/score'
@@ -21,7 +21,7 @@ export default function StateReview() {
   const [comment, setComment] = useState('')
   const [err, setErr] = useState('')
   const f = db.facilities.find(x => x.id === id)
-  if (!f) return null
+  if (!f) return <NotFound back="/state" />
   const r = computeScore(f, db.checkins)
   const rating = avgRating(db, f.id)
   const flags = f.photos.filter(p => p.flagFar || p.flagDuplicate || p.flagPoorGps)
@@ -73,7 +73,7 @@ export default function StateReview() {
                 <Card><CardContent>
                   {CONDITION_KEYS.map(k => (
                     <Stack key={k} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.25 }}>
-                      <Typography variant="body2">{t(`cond.${k}`)}</Typography><Stars value={f.condition[k] || 0} size="small" />
+                      <Typography variant="body2">{t(`cond.${k}`)}</Typography>{f.condition[k] === 0 ? <Typography variant="caption" color="text.secondary">{t('common.notAvailable')}</Typography> : <Stars value={f.condition[k] || 0} size="small" />}
                     </Stack>
                   ))}
                   {f.lastMaintenance && <Typography variant="caption" color="text.secondary">{t('wiz.lastMaintenance')}: {f.lastMaintenance}</Typography>}

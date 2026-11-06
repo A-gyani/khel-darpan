@@ -138,8 +138,16 @@ export function resolveGrievance(id: string, note: string, actor: string) {
   commit(audit({ ...state, grievances }, actor, g?.facilityId || '', 'grievance_resolved', `${g?.ref}: ${note}`))
 }
 
-export function addRating(r: Omit<Rating, 'id' | 'at'>) {
+const rateKey = (facilityId: string) => `ks_rt_${facilityId}_${new Date().toISOString().slice(0, 10)}`
+export function ratedToday(facilityId: string) {
+  try { return !!localStorage.getItem(rateKey(facilityId)) } catch { return false }
+}
+/** One rating per phone per facility per day. Returns false if already rated today. */
+export function addRating(r: Omit<Rating, 'id' | 'at'>): boolean {
+  if (ratedToday(r.facilityId)) return false
+  try { localStorage.setItem(rateKey(r.facilityId), '1') } catch { /* ignore */ }
   commit({ ...state, ratings: [...state.ratings, { ...r, id: uid(), at: now() }] })
+  return true
 }
 
 export function avgRating(db: DB, facilityId: string) {

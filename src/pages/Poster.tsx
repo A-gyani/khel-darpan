@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Box, Button, Stack, Typography } from '@mui/material'
 import { useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
-import { Icon, TopBar } from '../components/ui'
+import { Icon, TopBar, NotFound } from '../components/ui'
 import { useDb } from '../data/store'
 import gu from '../locales/gu.json'
 import en from '../locales/en.json'
@@ -26,7 +26,7 @@ export default function Poster() {
   useEffect(() => {
     if (f) QRCode.toDataURL(qrUrl(f.id), { width: 600, margin: 1, color: { dark: '#0D4A80' } }).then(setSrc)
   }, [f?.id]) // eslint-disable-line
-  if (!f) return null
+  if (!f) return <NotFound back="/" />
   return (
     <>
       <TopBar back title={en.qr.poster} actions={<Button variant="contained" startIcon={<Icon name="print" />} onClick={() => window.print()} className="no-print" sx={{ px: 1.5, flexShrink: 0 }}>PDF</Button>} />

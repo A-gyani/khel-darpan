@@ -144,7 +144,7 @@ export function CameraCapture(props: Props) {
         {err && <Alert severity="error" sx={{ m: 2 }}>{err}</Alert>}
         {!preview && <video ref={videoRef} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
         {preview && <img src={preview.dataUrl} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />}
-        {!preview && (
+        {!preview && !err && (
           <Alert icon={<Icon name="face_retouching_off" />} severity="info" sx={{ position: 'absolute', top: 8, left: 8, right: 8, opacity: 0.92 }}>{t('wiz.faces')}</Alert>
         )}
       </Box>

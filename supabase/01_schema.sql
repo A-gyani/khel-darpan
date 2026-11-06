@@ -106,7 +106,8 @@ drop policy if exists p_ci_state on public.checkins;
 create policy p_ci_state on public.checkins for delete to authenticated using (public.is_state());
 
 drop policy if exists p_gr_insert on public.grievances;
-create policy p_gr_insert on public.grievances for insert to anon, authenticated with check (status = 'open');
+-- citizens can only file open complaints; the State officer may also load resolved ones (demo data, imports)
+create policy p_gr_insert on public.grievances for insert to anon, authenticated with check (status = 'open' or public.is_state());
 drop policy if exists p_gr_read on public.grievances;
 create policy p_gr_read on public.grievances for select to authenticated using (public.is_state() or district = public.my_district());
 drop policy if exists p_gr_update on public.grievances;

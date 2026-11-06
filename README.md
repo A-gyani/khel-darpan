@@ -1,7 +1,7 @@
 # Khel Darpan Gujarat — prototype
 
 SFIC 2026 · Problem statement **PS000012** (Sports, Youth & Cultural Activities Department):
-digital assessment, mapping and better use of sports facilities. Prototype scope: **Ahmedabad and Surat districts** (add more in `src/lib/constants.ts`).
+digital assessment, mapping and better use of sports facilities. Prototype scope: **Ahmedabad, Surat and Gandhinagar districts** (add more in `src/lib/constants.ts`).
 
 All facilities, photos, check-ins and complaints in the app are **synthetic demo data**.
 
@@ -17,6 +17,7 @@ All facilities, photos, check-ins and complaints in the app are **synthetic demo
 |---|---|---|---|
 | District Sports Officer, Ahmedabad | dso.ahmedabad@demo.in | 9000000001 | demo1234 |
 | District Sports Officer, Surat | dso.surat@demo.in | 9000000004 | demo1234 |
+| District Sports Officer, Gandhinagar | dso.gandhinagar@demo.in | 9000000005 | demo1234 |
 | State officer | state.demo@demo.in | 9000000002 | demo1234 |
 
 Demo OTP is **123456** (no SMS is sent). Citizens need no login.
@@ -39,7 +40,7 @@ Supabase (shared data across devices) is the next step — add keys to `.env` (s
 Push to `main`; `.github/workflows/deploy.yml` builds and publishes. In the repo: Settings → Pages → Source: GitHub Actions.
 
 ## Open [CONFIRM] items
-- Ahmedabad and Surat taluka lists vs lgdirectory.gov.in
+- Ahmedabad, Surat and Gandhinagar taluka lists vs lgdirectory.gov.in
 - Official CWG 2030 sport list (dashboard uses a provisional list)
 - Gujarati text to be checked by a native reader
 - Exact SAG brand colour codes

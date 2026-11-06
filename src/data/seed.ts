@@ -1,8 +1,8 @@
-// Synthetic DEMO data for Ahmedabad and Surat districts. Not real facilities. Placeholder images only.
+// Synthetic DEMO data for Ahmedabad, Surat and Gandhinagar districts. Not real facilities. Placeholder images only.
 import type { DB, Facility, CheckIn, Grievance, Rating, Photo, PhotoCaption, Timings, User, FacilityType, Ownership, CwgTag, Status } from '../lib/types'
 import { CONDITION_KEYS, SPORTS, districtOf } from '../lib/constants'
 
-export const SEED_VERSION = 6
+export const SEED_VERSION = 7
 
 // Deterministic random so the demo looks the same every time
 let s = 42
@@ -70,6 +70,16 @@ const SPECS: Spec[] = [
   { district: 'surat', name: 'Demo Football Turf – Kamrej', type: 'court', own: 'private_ppp', taluka: 'kamrej', ward: 'Kamrej', lat: 21.2700, lng: 72.9600, sports: ['football'], status: 'submitted', cond: 4, cap: 30, use: 160 },
   { district: 'surat', name: 'Demo Hockey Ground – Mandvi', type: 'open_ground', own: 'district', taluka: 'mandvi_surat', ward: 'Mandvi town', lat: 21.2540, lng: 73.3030, sports: ['hockey', 'athletics'], status: 'returned', cond: 3, cap: 60, use: 90 },
   { district: 'surat', name: 'Demo School Ground – Palsana', type: 'school_ground', own: 'school_college', taluka: 'palsana', ward: 'Palsana', lat: 21.0800, lng: 72.9900, sports: ['kabaddi', 'kho_kho'], status: 'draft', cond: 3, cap: 120, use: 80 },
+  // ---- Gandhinagar ----
+  { district: 'gandhinagar', name: 'Demo Sports Complex – Sector 11', type: 'sports_complex', own: 'state_sag', taluka: 'gandhinagar_tal', ward: 'Sector 11', lat: 23.2230, lng: 72.6480, sports: ['athletics', 'badminton', 'basketball', 'table_tennis', 'yoga'], status: 'approved', cond: 5, cap: 200, use: 1100 },
+  { district: 'gandhinagar', name: 'Demo Indoor Hall – Sector 7', type: 'indoor_hall', own: 'district', taluka: 'gandhinagar_tal', ward: 'Sector 7', lat: 23.2360, lng: 72.6420, sports: ['badminton', 'table_tennis', 'judo', 'chess'], status: 'approved', cond: 3, cap: 60, use: 380 },
+  { district: 'gandhinagar', name: 'Demo Swimming Pool – Sector 22', type: 'swimming_pool', own: 'municipal', taluka: 'gandhinagar_tal', ward: 'Sector 22', lat: 23.2290, lng: 72.6600, sports: ['swimming'], status: 'approved', cond: 4, cap: 60, use: 300 },
+  { district: 'gandhinagar', name: 'Demo Open Ground – Sector 28', type: 'open_ground', own: 'municipal', taluka: 'gandhinagar_tal', ward: 'Sector 28', lat: 23.2550, lng: 72.6600, sports: ['cricket', 'football', 'kabaddi'], status: 'approved', cond: 3, cap: 150, use: 120 },
+  { district: 'gandhinagar', name: 'Demo School Ground – Kudasan', type: 'school_ground', own: 'school_college', taluka: 'gandhinagar_tal', ward: 'Kudasan', lat: 23.1880, lng: 72.6330, sports: ['kho_kho', 'kabaddi', 'volleyball'], status: 'approved', cond: 4, cap: 120, use: 90 },
+  { district: 'gandhinagar', name: 'Demo Taluka Ground – Kalol', type: 'open_ground', own: 'district', taluka: 'kalol_gnr', ward: 'Kalol town', lat: 23.2464, lng: 72.5010, sports: ['cricket', 'athletics', 'kabaddi'], status: 'approved', cond: 2, cap: 140, use: 520 },
+  { district: 'gandhinagar', name: 'Demo Akhada – Dehgam', type: 'akhada', own: 'other', taluka: 'dehgam', ward: 'Dehgam town', lat: 23.1700, lng: 72.8200, sports: ['wrestling'], status: 'approved', cond: 3, cap: 25, use: 110 },
+  { district: 'gandhinagar', name: 'Demo Athletics Track – Infocity', type: 'open_ground', own: 'state_sag', taluka: 'gandhinagar_tal', ward: 'Infocity', lat: 23.1950, lng: 72.6370, sports: ['athletics'], status: 'submitted', cond: 4, cap: 80, use: 200 },
+  { district: 'gandhinagar', name: 'Demo Village Ground – Mansa', type: 'open_ground', own: 'other', taluka: 'mansa', ward: 'Mansa town', lat: 23.4250, lng: 72.6600, sports: ['kabaddi', 'kho_kho'], status: 'draft', cond: 2, cap: 80, use: 40 },
 ]
 
 const CAPTIONS: PhotoCaption[] = ['entrance', 'playing_area', 'toilets']
@@ -97,13 +107,14 @@ export function buildSeed(): DB {
   const users: User[] = [
     { id: 'u_dso', fullName: 'Demo DSO Ahmedabad', email: 'dso.ahmedabad@demo.in', phone: '9000000001', password: 'demo1234', role: 'district_officer', district: 'ahmedabad' },
     { id: 'u_dso_surat', fullName: 'Demo DSO Surat', email: 'dso.surat@demo.in', phone: '9000000004', password: 'demo1234', role: 'district_officer', district: 'surat' },
+    { id: 'u_dso_gnr', fullName: 'Demo DSO Gandhinagar', email: 'dso.gandhinagar@demo.in', phone: '9000000005', password: 'demo1234', role: 'district_officer', district: 'gandhinagar' },
     { id: 'u_state', fullName: 'Demo State Officer', email: 'state.demo@demo.in', phone: '9000000002', password: 'demo1234', role: 'state_officer' },
     { id: 'u_public', fullName: 'Demo Citizen', email: 'public.demo@demo.in', phone: '9000000003', password: 'demo1234', role: 'public' },
   ]
 
   const facilities: Facility[] = SPECS.map((sp, i) => {
     const dist = sp.district || 'ahmedabad'
-    const dso = dist === 'surat' ? 'u_dso_surat' : 'u_dso'
+    const dso = dist === 'surat' ? 'u_dso_surat' : dist === 'gandhinagar' ? 'u_dso_gnr' : 'u_dso'
     const cond: Record<string, number> = {}
     CONDITION_KEYS.forEach(k => (cond[k] = Math.max(1, Math.min(5, sp.cond + int(-1, 1)))))
     const women = sp.cond >= 3 || i % 4 === 0
@@ -173,7 +184,7 @@ export function buildSeed(): DB {
     staff: 'Caretaker did not allow girls to use the court.',
     other: 'Drinking water cooler not working.',
   }
-  const grievances: Grievance[] = Array.from({ length: 22 }, (_, i) => {
+  const grievances: Grievance[] = Array.from({ length: 28 }, (_, i) => {
     const appr = facilities.filter(x => x.status === 'approved')
     const f = appr[(i * 7) % appr.length]
     const cat = gCats[i % gCats.length]

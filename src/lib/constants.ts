@@ -4,6 +4,7 @@ import type { ConditionKey, DayKey, FacilityType, Ownership, PhotoCaption, Griev
 export const DISTRICTS: { id: string; en: string; gu: string; lat: number; lng: number }[] = [
   { id: 'ahmedabad', en: 'Ahmedabad', gu: 'અમદાવાદ', lat: 23.0225, lng: 72.5714 },
   { id: 'surat', en: 'Surat', gu: 'સુરત', lat: 21.1702, lng: 72.8311 },
+  { id: 'gandhinagar', en: 'Gandhinagar', gu: 'ગાંધીનગર', lat: 23.2156, lng: 72.6369 },
 ]
 
 export interface Taluka { id: string; district: string; en: string; gu: string; lat: number; lng: number }
@@ -32,6 +33,11 @@ export const TALUKAS: Taluka[] = [
   { id: 'olpad', district: 'surat', en: 'Olpad', gu: 'ઓલપાડ', lat: 21.33, lng: 72.75 },
   { id: 'palsana', district: 'surat', en: 'Palsana', gu: 'પલસાણા', lat: 21.08, lng: 72.99 },
   { id: 'umarpada', district: 'surat', en: 'Umarpada', gu: 'ઉમરપાડા', lat: 21.45, lng: 73.48 },
+  // Gandhinagar
+  { id: 'gandhinagar_tal', district: 'gandhinagar', en: 'Gandhinagar', gu: 'ગાંધીનગર', lat: 23.2156, lng: 72.6369 },
+  { id: 'kalol_gnr', district: 'gandhinagar', en: 'Kalol', gu: 'કલોલ', lat: 23.2464, lng: 72.501 },
+  { id: 'dehgam', district: 'gandhinagar', en: 'Dehgam', gu: 'દહેગામ', lat: 23.17, lng: 72.82 },
+  { id: 'mansa', district: 'gandhinagar', en: 'Mansa', gu: 'માણસા', lat: 23.425, lng: 72.66 },
 ]
 
 export const talukasOf = (district: string) => TALUKAS.filter(x => x.district === district)

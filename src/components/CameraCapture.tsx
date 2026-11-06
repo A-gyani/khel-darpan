@@ -21,8 +21,12 @@ interface Props {
   defaultCaption: PhotoCaption
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((res, rej) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = rej; i.src = src })
+/** Gives up after `ms` so a weak or missing signal never holds up the photo (the stamp is drawn without the mini map). */
+function loadImage(src: string, ms = 4000): Promise<HTMLImageElement> {
+  return new Promise((res, rej) => {
+    const i = new Image(); const timer = window.setTimeout(() => rej(new Error('timeout')), ms)
+    i.crossOrigin = 'anonymous'; i.onload = () => { window.clearTimeout(timer); res(i) }; i.onerror = e => { window.clearTimeout(timer); rej(e) }; i.src = src
+  })
 }
 
 // small OSM map thumbnail for the stamp (one tile at zoom 16, marker drawn at the exact point)

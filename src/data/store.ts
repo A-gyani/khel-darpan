@@ -2,6 +2,8 @@
 // - Local demo mode (no Supabase keys): everything kept in this browser (IndexedDB), preloaded with seed data.
 // - Supabase mode (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY): one shared database for all devices.
 //   Screens read the same in-memory snapshot; every change is applied locally at once and saved to Supabase in the background.
+// - Offline: every Supabase write goes through an outbox kept on the phone (IndexedDB) and is sent, in order, when the phone
+//   is online. The last data loaded is also kept on the phone, so the app opens and works with no signal.
 import { openDB } from 'idb'
 import { useSyncExternalStore } from 'react'
 import type { DB, Facility, CheckIn, Grievance, Rating, ReviewAction, User, AuditEntry } from '../lib/types'
@@ -22,9 +24,23 @@ const idb = () => openDB(DB_NAME, 1, { upgrade(d) { d.createObjectStore('kv') } 
 
 export async function initStore() {
   if (REMOTE) {
+    let snap: Snapshot | undefined
+    try {
+      const d = await idb()
+      outbox = ((await d.get('kv', OUTBOX_KEY)) as Op[] | undefined) || []
+      snap = (await d.get('kv', SNAP_KEY)) as Snapshot | undefined
+    } catch { /* private mode etc. */ }
     try {
       const s = await R.getSession()
       sessionUserId = s?.user.id ?? null
+    } catch { /* offline: fall back to the user saved with the snapshot */ }
+    if (!sessionUserId && !navigator.onLine && snap?.uid && snap.uid !== 'public') sessionUserId = snap.uid
+    if (snap && snap.uid === (sessionUserId || 'public') && snap.db?.version === SEED_VERSION) state = snap.db
+    emitSync()
+    window.addEventListener('online', () => { void flush().then(() => reload()) })
+    window.addEventListener('offline', emitSync)
+    window.setInterval(() => { if (outbox.length) void flush() }, 30000)
+    try {
       await reload()
       R.subscribe(() => { void reload() })
     } catch (e) { R.reportError('load', e) }
@@ -41,20 +57,113 @@ export async function initStore() {
   emit()
 }
 
-/** Supabase: fetch everything this user may see. */
+/** Supabase: fetch everything this user may see. Changes still waiting in the outbox are sent first,
+ *  so a reload never hides what was entered offline. */
 export async function reload() {
   if (!REMOTE) return
+  if (outbox.length) await flush()
+  if (outbox.length || !navigator.onLine) return // keep the copy on this phone until everything is uploaded
   try {
     const data = await R.loadAll(!!sessionUserId)
     state = { version: SEED_VERSION, ...data }
     emit()
-  } catch (e) { R.reportError('load', e) }
+    void persist()
+  } catch (e) { if (!isNetworkError(e)) R.reportError('load', e) }
+}
+
+/* ---------- offline: outbox + snapshot ---------- */
+const OUTBOX_KEY = 'outbox'
+const SNAP_KEY = 'snapshot'
+type Snapshot = { uid: string; db: DB }
+type Table = 'checkins' | 'grievances' | 'ratings' | 'reviews' | 'audit'
+/** One Supabase write, stored as plain data so it survives the app being closed. */
+type OpBody =
+  | { kind: 'putFacility'; f: Facility; publicCopy?: Facility | null; replace: boolean }
+  | { kind: 'deleteFacility'; facilityId: string }
+  | { kind: 'insertOne'; table: Table; row: Record<string, unknown> }
+  | { kind: 'insertRows'; table: Table; rows: Record<string, unknown>[] }
+  | { kind: 'updateGrievance'; g: Grievance }
+  | { kind: 'complaint'; g: Grievance; district?: string }
+type Op = OpBody & { id: string; label: string }
+let outbox: Op[] = []
+let flushing = false
+const syncListeners = new Set<() => void>()
+let syncState = { online: true, pending: 0, uploading: false }
+function emitSync() {
+  syncState = { online: navigator.onLine, pending: outbox.length, uploading: flushing }
+  syncListeners.forEach(l => l())
+}
+/** For the status bar: online or not, and how many changes are waiting to upload. */
+export function useSyncStatus() {
+  return useSyncExternalStore(cb => { syncListeners.add(cb); return () => syncListeners.delete(cb) }, () => syncState)
+}
+export const pendingCount = () => outbox.length
+
+function isNetworkError(e: unknown) {
+  if (!navigator.onLine) return true
+  const m = String((e as { message?: string })?.message || e)
+  return /failed to fetch|networkerror|network request failed|load failed|fetch failed|timeout|ERR_INTERNET|ERR_NETWORK/i.test(m)
+}
+async function saveOutbox() {
+  try { const d = await idb(); await d.put('kv', outbox, OUTBOX_KEY) } catch { /* ignore */ }
+}
+async function runOp(op: Op) {
+  switch (op.kind) {
+    case 'putFacility': {
+      const saved = await R.putFacility(op.f, op.publicCopy)
+      if (op.replace) replaceSaved(saved)
+      return
+    }
+    case 'deleteFacility': return R.deleteFacilityRow(op.facilityId)
+    case 'insertOne': return R.insertOne(op.table, op.row)
+    case 'insertRows': return R.insertRows(op.table, op.rows)
+    case 'updateGrievance': return R.updateGrievance(op.g)
+    case 'complaint': {
+      const photo = op.g.photo && op.g.photo.startsWith('data:') ? await R.uploadReportPhoto(op.g.photo, op.g.id) : op.g.photo
+      return R.insertOne('grievances', R.rowOf.grievance({ ...op.g, photo }, op.district))
+    }
+  }
+}
+/** Send waiting changes in the order they were made. Stops at the first network error and tries again later. */
+async function flush() {
+  if (!REMOTE || flushing || !outbox.length || !navigator.onLine) { emitSync(); return }
+  flushing = true; emitSync()
+  try {
+    while (outbox.length) {
+      const op = outbox[0]
+      try {
+        await runOp(op)
+      } catch (e) {
+        if (isNetworkError(e)) break
+        // the database refused it (e.g. permissions): report it and move on so other changes are not blocked
+        R.reportError(op.label, e)
+      }
+      outbox = outbox.slice(1)
+      await saveOutbox()
+      emitSync()
+    }
+  } finally { flushing = false; emitSync() }
+}
+/** Queue a Supabase write (sent now if online, later if not). */
+function sync(op: OpBody & { label: string }) {
+  if (!REMOTE) return
+  outbox = [...outbox, { ...op, id: uid() }]
+  emitSync()
+  void saveOutbox().then(flush)
 }
 
 function emit() { listeners.forEach(l => l()) }
 
+let persistTimer: number | undefined
 async function persist() {
-  if (REMOTE) return
+  if (REMOTE) {
+    // keep a copy of what this user can see, so the app opens offline
+    window.clearTimeout(persistTimer)
+    persistTimer = window.setTimeout(async () => {
+      try { const d = await idb(); await d.put('kv', { uid: sessionUserId || 'public', db: state } as Snapshot, SNAP_KEY) } catch { /* ignore */ }
+    }, 400)
+    return
+  }
   try { const d = await idb(); await d.put('kv', state, 'db') } catch { /* ignore */ }
 }
 
@@ -65,13 +174,8 @@ function commit(next: DB) {
   void persist()
   if (REMOTE && pendingAudit.length && sessionUserId) {
     const rows = pendingAudit.map(R.rowOf.audit); pendingAudit = []
-    R.insertRows('audit', rows).catch(e => R.reportError('history', e))
+    sync({ kind: 'insertRows', table: 'audit', rows, label: 'history' })
   } else pendingAudit = []
-}
-/** Run a Supabase write in the background; report failures to the screen. */
-function sync(where: string, job: () => Promise<unknown>) {
-  if (!REMOTE) return
-  job().catch(e => R.reportError(where, e))
 }
 
 export function useDb(): DB {
@@ -122,7 +226,8 @@ export function logout() {
   if (REMOTE) {
     sessionUserId = null
     state = EMPTY; emit()
-    R.signOut().then(() => reload())
+    idb().then(d => d.delete('kv', SNAP_KEY)).catch(() => {})
+    R.signOut().catch(() => {}).then(() => reload())
     return
   }
   try { localStorage.removeItem(SESSION_KEY) } catch { /* ignore */ }
@@ -159,7 +264,7 @@ export function saveFacility(f: Facility, actor: string, changed: string[] = [])
   }
   const facilities = exists ? state.facilities.map(x => (x.id === f.id ? updated : x)) : [...state.facilities, updated]
   commit(audit({ ...state, facilities }, actor, f.id, exists ? 'updated' : 'created', changed.join(', ')))
-  sync('save facility', async () => replaceSaved(await R.putFacility(updated)))
+  sync({ kind: 'putFacility', f: updated, replace: true, label: 'save facility' })
 }
 
 export function submitFacility(id: string, actor: string) {
@@ -171,7 +276,7 @@ export function submitFacility(id: string, actor: string) {
   })
   commit(audit({ ...state, facilities }, actor, id, 'submitted'))
   const f = facilities.find(x => x.id === id)!
-  sync('submit', async () => replaceSaved(await R.putFacility(f)))
+  sync({ kind: 'putFacility', f, replace: true, label: 'submit' })
 }
 
 export function reviewFacility(id: string, actor: string, action: ReviewAction['action'], comment: string, reasons: string[] = []) {
@@ -186,10 +291,8 @@ export function reviewFacility(id: string, actor: string, action: ReviewAction['
   const reviews = [...state.reviews, review]
   commit(audit({ ...state, facilities, reviews }, actor, id, action, [reasons.length ? `[${reasons.join(', ')}]` : '', comment].filter(Boolean).join(' ')))
   const f = facilities.find(x => x.id === id)!
-  sync('review', async () => {
-    await R.putFacility(f, action === 'approved' ? { ...f, published: null } : undefined)
-    await R.insertOne('reviews', R.rowOf.review(review))
-  })
+  sync({ kind: 'putFacility', f, publicCopy: action === 'approved' ? { ...f, published: null } : undefined, replace: false, label: 'review' })
+  sync({ kind: 'insertOne', table: 'reviews', row: R.rowOf.review(review), label: 'review' })
 }
 
 /** DSO can delete only their own drafts (never submitted or approved records). */
@@ -197,7 +300,7 @@ export function deleteDraft(id: string, actor: string): boolean {
   const f = state.facilities.find(x => x.id === id)
   if (!f || f.status !== 'draft') return false
   commit(audit({ ...state, facilities: state.facilities.filter(x => x.id !== id) }, actor, id, 'deleted', f.name))
-  sync('delete draft', () => R.deleteFacilityRow(id))
+  sync({ kind: 'deleteFacility', facilityId: id, label: 'delete draft' })
   return true
 }
 
@@ -224,7 +327,7 @@ export function addCheckIn(c: Omit<CheckIn, 'id' | 'at'>): boolean {
   try { localStorage.setItem(todayKey(c.facilityId), String(MAX_CHECKINS_PER_DAY - checkInsLeftToday(c.facilityId) + 1)) } catch { /* ignore */ }
   const row: CheckIn = { ...c, id: uid(), at: now() }
   commit({ ...state, checkins: [...state.checkins, row] })
-  sync('check-in', () => R.insertOne('checkins', R.rowOf.checkin(row, districtOfFacility(c.facilityId))))
+  sync({ kind: 'insertOne', table: 'checkins', row: R.rowOf.checkin(row, districtOfFacility(c.facilityId)), label: 'check-in' })
   return true
 }
 
@@ -237,10 +340,7 @@ function newRef() {
 export function addGrievance(g: Omit<Grievance, 'id' | 'ref' | 'at' | 'status' | 'resolvedAt' | 'resolutionNote'>): string {
   const row: Grievance = { ...g, id: uid(), ref: newRef(), at: now(), status: 'open', resolvedAt: null, resolutionNote: '' }
   commit({ ...state, grievances: [...state.grievances, row] })
-  sync('complaint', async () => {
-    const photo = row.photo && row.photo.startsWith('data:') ? await R.uploadReportPhoto(row.photo, row.id) : row.photo
-    await R.insertOne('grievances', R.rowOf.grievance({ ...row, photo }, districtOfFacility(g.facilityId)))
-  })
+  sync({ kind: 'complaint', g: row, district: districtOfFacility(g.facilityId), label: 'complaint' })
   return row.ref
 }
 
@@ -249,7 +349,7 @@ export function resolveGrievance(id: string, note: string, actor: string) {
   const grievances = state.grievances.map(x => x.id === id ? { ...x, status: 'resolved' as const, resolvedAt: now(), resolutionNote: note } : x)
   commit(audit({ ...state, grievances }, actor, g?.facilityId || '', 'grievance_resolved', `${g?.ref}: ${note}`))
   const updated = grievances.find(x => x.id === id)
-  if (updated) sync('resolve complaint', () => R.updateGrievance(updated))
+  if (updated) sync({ kind: 'updateGrievance', g: updated, label: 'resolve complaint' })
 }
 
 const rateKey = (facilityId: string) => `ks_rt_${facilityId}_${new Date().toISOString().slice(0, 10)}`
@@ -262,7 +362,7 @@ export function addRating(r: Omit<Rating, 'id' | 'at'>): boolean {
   try { localStorage.setItem(rateKey(r.facilityId), '1') } catch { /* ignore */ }
   const row: Rating = { ...r, id: uid(), at: now() }
   commit({ ...state, ratings: [...state.ratings, row] })
-  sync('rating', () => R.insertOne('ratings', R.rowOf.rating(row)))
+  sync({ kind: 'insertOne', table: 'ratings', row: R.rowOf.rating(row), label: 'rating' })
   return true
 }
 

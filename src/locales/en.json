@@ -633,5 +633,17 @@
   "ex": {
     "excel": "Excel",
     "failed": "Could not create the Excel file."
+  },
+  "off": {
+    "offline": "You're offline. Changes are saved on this phone and will upload when you're back online.",
+    "pending_one": "{{count}} change waiting to upload.",
+    "pending_other": "{{count}} changes waiting to upload.",
+    "uploading_one": "Uploading {{count}} change…",
+    "uploading_other": "Uploading {{count}} changes…",
+    "install": "Install Khel Darpan on this phone to use it without internet.",
+    "installBtn": "Install",
+    "logoutPending_one": "{{count}} change on this phone has not uploaded yet. If you log out now it may be lost. Log out anyway?",
+    "logoutPending_other": "{{count}} changes on this phone have not uploaded yet. If you log out now they may be lost. Log out anyway?",
+    "loginOffline": "You're offline. Log in once with internet; after that the app works without it."
   }
 }

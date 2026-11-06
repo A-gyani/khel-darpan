@@ -16,6 +16,7 @@ import DsoFacilityView from './pages/DsoFacilityView'
 import StateDashboard from './pages/StateDashboard'
 import StateReview from './pages/StateReview'
 import Poster from './pages/Poster'
+import { OfflineBar } from './components/OfflineBar'
 
 function Guard({ role, children }: { role: Role; children: ReactNode }) {
   const user = useCurrentUser()
@@ -56,6 +57,7 @@ export default function App() {
         <Box sx={{ height: '100vh', display: 'grid', placeItems: 'center' }}><CircularProgress /></Box>
       ) : (
         <HashRouter>
+          <OfflineBar />
           <Routes>
             <Route path="/" element={<Root />} />
             <Route path="/login" element={<Login />} />

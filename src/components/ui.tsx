@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { toggleLang } from '../i18n'
-import { logout, useDb, currentUserId } from '../data/store'
+import { logout, useDb, currentUserId, pendingCount } from '../data/store'
 import type { Status, User } from '../lib/types'
 import type { ScoreResult } from '../lib/score'
 import { BAND_COLORS } from '../lib/score'
@@ -55,7 +55,7 @@ export function TopBar({ title, back, actions }: { title?: string; back?: string
         <LangButton />
         {user && (
           <Tooltip title={t('common.logout')}>
-            <IconButton onClick={() => { logout(); nav('/map') }} aria-label={t('common.logout')}><Icon name="logout" /></IconButton>
+            <IconButton onClick={() => { const n = pendingCount(); if (n && !confirm(t('off.logoutPending', { count: n }))) return; logout(); nav('/map') }} aria-label={t('common.logout')}><Icon name="logout" /></IconButton>
           </Tooltip>
         )}
       </Toolbar>

@@ -46,6 +46,7 @@ export default function Login() {
   const [busy, setBusy] = useState(false)
   async function doEmail(e: React.FormEvent) {
     e.preventDefault()
+    if (!navigator.onLine) return setErr(t('off.loginOffline'))
     setBusy(true); setErr('')
     const u = await login(email.trim(), password)
     setBusy(false)
@@ -54,6 +55,7 @@ export default function Login() {
   }
   async function sendOtp(e: React.FormEvent) {
     e.preventDefault()
+    if (!navigator.onLine) return setErr(t('off.loginOffline'))
     setBusy(true)
     const ok = await phoneRegistered(phone.trim())
     setBusy(false)

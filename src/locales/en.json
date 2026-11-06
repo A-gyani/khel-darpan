@@ -57,7 +57,7 @@
   "pillar": { "condition": "Condition", "utilisation": "Use", "accessibility": "Access", "inclusivity": "Inclusivity", "performance": "Performance", "qr": "from QR check-ins", "estimate": "from DSO estimate" },
   "band": { "green": "Good (75+)", "amber": "Fair (50–74)", "red": "Poor (below 50)", "grey": "Not enough data" },
   "public": {
-    "searchPh": "Search facility, sport or area", "sport": "Sport", "type": "Type", "taluka": "Taluka", "fee": "Fee",
+    "searchPh": "Search facility, sport or area", "sport": "Sport", "type": "Type", "district": "District", "taluka": "Taluka", "fee": "Fee",
     "womenFriendly": "Women-friendly", "accessible": "Accessible", "openNow": "Open now", "results": "{{count}} facilities",
     "nearest": "Nearest first", "locating": "Finding you…", "sortedByDistance": "Showing facilities nearest to you. Tap again to turn off.", "locDenied": "Location is blocked. Allow location for this site in your browser settings.", "locTimeout": "Could not get your location in time. Try again outdoors or turn on GPS.", "locUnavailable": "Location is not available on this device.", "allowLocation": "Allow location to sort by distance", "noResults": "No facility matches these filters",
     "officerLogin": "Officer login", "officialLogin": "Official login", "officials": "Officials", "myDashboard": "My dashboard", "rating": "Citizen rating", "ratings": "{{count}} ratings", "noRatings": "No ratings yet",
@@ -118,7 +118,7 @@
     "checkinsTrend": "QR check-ins (last 4 weeks)", "female": "Female", "male": "Male", "otherNa": "Other / not said",
     "gByCat": "Complaints by category", "cwgReady": "CWG 2030 sport readiness", "cwgNote": "Provisional sport list – confirm with official CWG 2030 programme",
     "facilities": "Facilities", "good": "Good", "poor": "Needs work", "gap": "Gap", "repairList": "Repair priority (high use, poor condition)",
-    "underusedList": "Underused (good condition, low use)", "progress": "Progress by taluka", "mapped": "Mapped", "approved": "Approved",
+    "underusedList": "Underused (good condition, low use)", "progress": "Progress", "allDistricts": "All districts", "gujarat": "Gujarat", "mapped": "Mapped", "approved": "Approved",
     "returnRate": "Returned", "onTime": "Complaints closed in 7 days", "lastActivity": "Last activity", "allClear": "Nothing in the queue",
     "submittedOn": "Submitted", "score": "Score", "use": "Use", "condition": "Condition", "action": "Action", "by": "by", "rating": "Citizen rating"
   }

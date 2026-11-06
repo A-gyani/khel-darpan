@@ -7,7 +7,17 @@ import { Icon, TopBar, ScoreBadge, StatusChip, Section, TagChips } from '../comp
 import { MapView } from '../components/MapView'
 import { useDb, resetDemo } from '../data/store'
 import { computeScore, BAND_COLORS } from '../lib/score'
-import { CWG_SPORTS, ESCALATE_AFTER_DAYS, FACILITY_TYPES, GRIEVANCE_CATEGORIES, TALUKAS } from '../lib/constants'
+import { CWG_SPORTS, ESCALATE_AFTER_DAYS, FACILITY_TYPES, GRIEVANCE_CATEGORIES, DISTRICTS, talukasOf, districtOf, placeName } from '../lib/constants'
+import type { DB } from '../lib/types'
+
+/** Limit all data to one district ('' = whole state). */
+function scope(db: DB, dist: string): DB {
+  if (!dist) return db
+  const facilities = db.facilities.filter(f => f.district === dist)
+  const ids = new Set(facilities.map(f => f.id))
+  const by = <T extends { facilityId: string }>(xs: T[]) => xs.filter(x => ids.has(x.facilityId))
+  return { ...db, facilities, checkins: by(db.checkins), grievances: by(db.grievances), ratings: by(db.ratings), reviews: by(db.reviews), audit: by(db.audit) }
+}
 import { brand } from '../theme'
 import { daysSince } from './DsoHome'
 import { typeIcon } from './PublicMap'
@@ -44,7 +54,10 @@ function ChartCard({ title, icon, children, note }: { title: string; icon: strin
 export default function StateDashboard() {
   const { t, i18n } = useTranslation()
   const nav = useNavigate()
-  const db = useDb()
+  const fullDb = useDb()
+  const [dist, setDist] = useState<string>(() => { try { return localStorage.getItem('ks_state_dist') || '' } catch { return '' } })
+  const pickDist = (d: string) => { setDist(d); try { localStorage.setItem('ks_state_dist', d) } catch { /* ignore */ } }
+  const db = useMemo(() => scope(fullDb, dist), [fullDb, dist])
   const [tab, setTab] = useState(0)
 
   const scored = useMemo(() => db.facilities.map(f => ({ f, r: computeScore(f, db.checkins) })), [db.facilities, db.checkins])
@@ -88,13 +101,16 @@ export default function StateDashboard() {
   const repair = approved.filter(x => x.r.tags.includes('repair_priority')).sort((a, b) => (b.r.pillars[1].value ?? 0) - (a.r.pillars[1].value ?? 0))
   const underused = approved.filter(x => x.r.tags.includes('underused')).sort((a, b) => (a.r.pillars[1].value ?? 0) - (b.r.pillars[1].value ?? 0))
 
-  const progress = TALUKAS.map(tal => {
-    const fs = db.facilities.filter(f => f.taluka === tal.id && f.status !== 'draft')
+  // whole state: one row per district; one district: one row per taluka
+  const units = dist ? talukasOf(dist) : DISTRICTS
+  const inUnit = (f: { taluka: string; district: string }, id: string) => (dist ? f.taluka === id : f.district === id)
+  const progress = units.map(tal => {
+    const fs = db.facilities.filter(f => inUnit(f, tal.id) && f.status !== 'draft')
     const ids = new Set(fs.map(f => f.id))
     const returnedCount = db.reviews.filter(r => ids.has(r.facilityId) && r.action === 'returned').length
     const gs = db.grievances.filter(g => ids.has(g.facilityId))
     const onTime = gs.filter(g => g.status === 'resolved' && g.resolvedAt && (new Date(g.resolvedAt).getTime() - new Date(g.at).getTime()) / 864e5 <= ESCALATE_AFTER_DAYS).length
-    const last = db.facilities.filter(f => f.taluka === tal.id).map(f => f.updatedAt).sort().pop()
+    const last = db.facilities.filter(f => inUnit(f, tal.id)).map(f => f.updatedAt).sort().pop()
     return { tal, mapped: fs.length, approved: fs.filter(f => f.status === 'approved').length, returnedCount, gTotal: gs.length, onTime, last }
   })
 
@@ -102,8 +118,14 @@ export default function StateDashboard() {
 
   return (
     <>
-      <TopBar title={`${t('state.dashboard')} · Ahmedabad`} />
+      <TopBar title={`${t('state.dashboard')} · ${dist ? placeName(districtOf(dist), i18n.language) : t('state.gujarat')}`} />
       <Container maxWidth="xl" sx={{ py: 2, pb: 6, px: { xs: 1.5, sm: 3 } }}>
+        <Stack direction="row" gap={1} sx={{ mb: 1.5, overflowX: 'auto', pb: 0.5 }}>
+          {[{ id: '', label: t('state.allDistricts') }, ...DISTRICTS.map(d => ({ id: d.id, label: placeName(d, i18n.language) }))].map(d => (
+            <Chip key={d.id || 'all'} label={d.label} onClick={() => pickDist(d.id)} color={dist === d.id ? 'primary' : 'default'} variant={dist === d.id ? 'filled' : 'outlined'}
+              icon={<Icon name={d.id ? 'location_city' : 'map'} size={18} color={dist === d.id ? '#fff' : undefined} />} sx={{ flexShrink: 0, bgcolor: dist === d.id ? undefined : '#fff' }} />
+          ))}
+        </Stack>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 1.25, mb: 2 }}>
           <Kpi icon="location_on" label={t('state.total')} value={approved.length} sub={`${db.facilities.length} ${t('common.all').toLowerCase()}`} />
           <Kpi icon="pending_actions" label={t('state.pending')} value={queue.length} color={brand.orange} onClick={() => setTab(0)} />
@@ -132,7 +154,7 @@ export default function StateDashboard() {
                     <Box component="img" src={f.photos[1]?.thumbUrl || f.photos[0]?.thumbUrl} alt="" sx={{ width: { xs: 64, sm: 96 }, height: { xs: 64, sm: 72 }, flexShrink: 0, borderRadius: '10px', objectFit: 'cover', bgcolor: '#E3ECF6' }} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography fontWeight={500} noWrap>{f.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">{t('state.submittedOn')} {f.submittedAt ? new Date(f.submittedAt).toLocaleDateString('en-IN') : ''} · {daysSince(f.submittedAt || f.updatedAt)} {t('common.days')}</Typography>
+                      <Typography variant="body2" color="text.secondary">{!dist && <b>{placeName(districtOf(f.district), i18n.language)} · </b>}{t('state.submittedOn')} {f.submittedAt ? new Date(f.submittedAt).toLocaleDateString('en-IN') : ''} · {daysSince(f.submittedAt || f.updatedAt)} {t('common.days')}</Typography>
                       <Stack direction="row" gap={0.5} sx={{ mt: 0.5 }} flexWrap="wrap">
                         <StatusChip status={f.status} />
                         {f.published && <Chip size="small" label="Re-review" sx={{ height: 26 }} />}
@@ -256,7 +278,7 @@ export default function StateDashboard() {
 
         {tab === 4 && (
           <Card sx={{ overflowX: 'auto' }}><Table size="small" sx={{ minWidth: 560 }}>
-            <TableHead><TableRow><TableCell>{t('public.taluka')}</TableCell><TableCell align="right">{t('state.mapped')}</TableCell><TableCell align="right">{t('state.approved')}</TableCell><TableCell align="right">{t('state.returnRate')}</TableCell><TableCell align="right">{t('state.onTime')}</TableCell><TableCell>{t('state.lastActivity')}</TableCell></TableRow></TableHead>
+            <TableHead><TableRow><TableCell>{dist ? t('public.taluka') : t('public.district')}</TableCell><TableCell align="right">{t('state.mapped')}</TableCell><TableCell align="right">{t('state.approved')}</TableCell><TableCell align="right">{t('state.returnRate')}</TableCell><TableCell align="right">{t('state.onTime')}</TableCell><TableCell>{t('state.lastActivity')}</TableCell></TableRow></TableHead>
             <TableBody>
               {progress.map(p => (
                 <TableRow key={p.tal.id}>

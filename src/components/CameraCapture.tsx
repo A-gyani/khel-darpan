@@ -15,6 +15,7 @@ interface Props {
   officerId: string
   taluka: string
   ward: string
+  district?: { en: string; gu: string }
   pin: { lat: number; lng: number } | null
   existingHashes: string[]
   defaultCaption: PhotoCaption
@@ -103,7 +104,7 @@ export function CameraCapture(props: Props) {
     const lines = [
       props.facilityName || '—',
       lat != null ? `${lat.toFixed(5)}, ${lng!.toFixed(5)}  (±${acc} m)` : 'GPS not available',
-      `${[props.ward, tal ? (i18n.language === 'gu' ? tal.gu : tal.en) : '', 'Ahmedabad'].filter(Boolean).join(', ')}`,
+      `${[props.ward, tal ? (i18n.language === 'gu' ? tal.gu : tal.en) : '', props.district ? (i18n.language === 'gu' ? props.district.gu : props.district.en) : ''].filter(Boolean).join(', ')}`,
       `${capturedAt.toLocaleDateString('en-IN')} ${capturedAt.toLocaleTimeString('en-IN')} · ${props.officerName}`,
     ]
     const fs = Math.round(band / 6.2)

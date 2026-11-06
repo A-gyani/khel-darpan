@@ -6,7 +6,7 @@ import { Icon, Stars, DemoBadge, useCurrentUser, LangButton } from '../component
 import { home } from '../lib/routes'
 import { MapView } from '../components/MapView'
 import { useDb, publicFacilities, avgRating } from '../data/store'
-import { FACILITY_TYPES, SPORTS, TALUKAS } from '../lib/constants'
+import { FACILITY_TYPES, SPORTS, TALUKAS, DISTRICTS, talukasOf, districtOf } from '../lib/constants'
 import { getPosition, haversine, isOpenNow } from '../lib/geo'
 import { brand } from '../theme'
 import type { Facility } from '../lib/types'
@@ -17,8 +17,8 @@ const TYPE_ICON: Record<string, string> = {
 }
 export const typeIcon = (t: string) => TYPE_ICON[t] || 'sports'
 
-interface Filters { sport: string; type: string; taluka: string; fee: string; women: boolean; accessible: boolean; openNow: boolean }
-const EMPTY: Filters = { sport: '', type: '', taluka: '', fee: '', women: false, accessible: false, openNow: false }
+interface Filters { district: string; sport: string; type: string; taluka: string; fee: string; women: boolean; accessible: boolean; openNow: boolean }
+const EMPTY: Filters = { district: '', sport: '', type: '', taluka: '', fee: '', women: false, accessible: false, openNow: false }
 
 export function isWomenFriendly(f: Facility) { return f.amenities.includes('toilets_women') && f.amenities.includes('changing_room_women') }
 export function isAccessible(f: Facility) { return f.amenities.includes('ramp_access') || f.amenities.includes('accessible_toilet') }
@@ -44,11 +44,13 @@ export default function PublicMap() {
     let r = all.filter(x => {
       if (ql) {
         const tal = TALUKAS.find(tt => tt.id === x.taluka)
-        const hay = [x.name, x.ward, tal?.en, tal?.gu, ...x.sports.map(s => t(`sport.${s}`) as string), ...x.sports].join(' ').toLowerCase()
+        const dd = districtOf(x.district)
+        const hay = [x.name, x.ward, tal?.en, tal?.gu, dd?.en, dd?.gu, ...x.sports.map(s => t(`sport.${s}`) as string), ...x.sports].join(' ').toLowerCase()
         if (!hay.includes(ql)) return false
       }
       if (f.sport && !x.sports.includes(f.sport)) return false
       if (f.type && x.type !== f.type) return false
+      if (f.district && x.district !== f.district) return false
       if (f.taluka && x.taluka !== f.taluka) return false
       if (f.fee && x.feeType !== f.fee) return false
       if (f.women && !isWomenFriendly(x)) return false
@@ -165,12 +167,13 @@ export default function PublicMap() {
             {([
               ['sport', t('public.sport'), SPORTS.map(s => [s, t(`sport.${s}`)])],
               ['type', t('public.type'), FACILITY_TYPES.map(s => [s, t(`type.${s}`)])],
-              ['taluka', t('public.taluka'), TALUKAS.map(s => [s.id, i18n.language === 'gu' ? s.gu : s.en])],
+              ['district', t('public.district'), DISTRICTS.map(s => [s.id, i18n.language === 'gu' ? s.gu : s.en])],
+              ['taluka', t('public.taluka'), (draft.district ? talukasOf(draft.district) : TALUKAS).map(s => [s.id, i18n.language === 'gu' ? s.gu : s.en])],
               ['fee', t('public.fee'), ['free', 'subsidised', 'paid'].map(s => [s, t(`fee.${s}`)])],
             ] as [keyof Filters, string, string[][]][]).map(([key, label, opts]) => (
               <FormControl key={key} fullWidth>
                 <InputLabel>{label}</InputLabel>
-                <Select label={label} value={draft[key] as string} onChange={e => setDraft({ ...draft, [key]: e.target.value })}>
+                <Select label={label} value={draft[key] as string} onChange={e => setDraft({ ...draft, [key]: e.target.value, ...(key === 'district' ? { taluka: '' } : {}) })}>
                   <MenuItem value="">{t('common.all')}</MenuItem>
                   {opts.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}
                 </Select>

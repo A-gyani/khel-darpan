@@ -6,7 +6,7 @@ import { Icon, TopBar, StatusChip, ScoreBadge, TagChips, useCurrentUser, DemoBad
 import { MapView } from '../components/MapView'
 import { useDb, resolveGrievance } from '../data/store'
 import { computeScore, BAND_COLORS } from '../lib/score'
-import { ESCALATE_AFTER_DAYS, TALUKAS } from '../lib/constants'
+import { ESCALATE_AFTER_DAYS, TALUKAS, districtOf, placeName } from '../lib/constants'
 import type { Status } from '../lib/types'
 import { typeIcon } from './PublicMap'
 
@@ -38,7 +38,7 @@ export default function DsoHome() {
 
   return (
     <>
-      <TopBar title={`${t('dso.home')} · Ahmedabad`} />
+      <TopBar title={`${t('dso.home')} · ${placeName(districtOf(user.district || ''), i18n.language)}`} />
       <Container maxWidth="lg" sx={{ py: 2, pb: 12, px: { xs: 1.5, sm: 3 } }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' }, gap: 1.25, mb: 2 }}>
           {stat('draft', 'edit_note')}{stat('submitted', 'schedule_send')}{stat('returned', 'undo')}{stat('approved', 'verified')}

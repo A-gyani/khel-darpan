@@ -6,17 +6,17 @@ import { Icon, TopBar, Stars, ScoreBars, ScoreBadge, TagChips, StatusChip, useCu
 import { CameraCapture } from '../components/CameraCapture'
 import { MapView } from '../components/MapView'
 import { useDb, saveFacility, submitFacility } from '../data/store'
-import { AMENITIES, CONDITION_KEYS, DAYS, DISTRICT, FACILITY_TYPES, OWNERSHIP, SPORTS, TALUKAS, FAR_FROM_PIN_M } from '../lib/constants'
+import { AMENITIES, CONDITION_KEYS, DAYS, FACILITY_TYPES, OWNERSHIP, SPORTS, TALUKAS, FAR_FROM_PIN_M, talukasOf, districtOf } from '../lib/constants'
 import { computeScore } from '../lib/score'
 import { getPosition, haversine, uid } from '../lib/geo'
 import { brand } from '../theme'
 import type { Facility, Photo, PhotoCaption } from '../lib/types'
 import { typeIcon } from './PublicMap'
 
-function blank(userId: string): Facility {
+function blank(userId: string, district: string): Facility {
   const t = new Date().toISOString()
   return {
-    id: 'f' + uid(), name: '', type: 'open_ground', ownership: 'municipal', district: DISTRICT, taluka: '', ward: '', address: '',
+    id: 'f' + uid(), name: '', type: 'open_ground', ownership: 'municipal', district, taluka: '', ward: '', address: '',
     lat: null, lng: null, gpsLat: null, gpsLng: null, gpsAccuracy: null, sports: [], amenities: [],
     timings: { mon: { open: '06:00', close: '20:00' }, tue: { open: '06:00', close: '20:00' }, wed: { open: '06:00', close: '20:00' }, thu: { open: '06:00', close: '20:00' }, fri: { open: '06:00', close: '20:00' }, sat: { open: '06:00', close: '20:00' }, sun: null },
     feeType: 'free', feeAmount: null, feeUnit: 'per_month', bookingName: '', bookingPhone: '', capacity: null, surface: '',
@@ -35,7 +35,7 @@ export default function DsoWizard() {
   const db = useDb()
   const user = useCurrentUser()!
   const existing = db.facilities.find(f => f.id === id)
-  const [f, setF] = useState<Facility>(() => existing ? structuredClone(existing) : blank(user.id))
+  const [f, setF] = useState<Facility>(() => existing ? structuredClone(existing) : blank(user.id, user.district || 'ahmedabad'))
   const [step, setStep] = useState(0)
   const [cam, setCam] = useState(false)
   const [msg, setMsg] = useState('')
@@ -114,7 +114,7 @@ export default function DsoWizard() {
       <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
         <FormControl fullWidth required><InputLabel>{t('wiz.taluka')}</InputLabel>
           <Select label={t('wiz.taluka')} value={f.taluka} onChange={e => set('taluka', e.target.value)}>
-            {TALUKAS.map(x => <MenuItem key={x.id} value={x.id}>{talName(x)}</MenuItem>)}
+            {talukasOf(f.district).map(x => <MenuItem key={x.id} value={x.id}>{talName(x)}</MenuItem>)}
           </Select></FormControl>
         <TextField label={t('wiz.ward')} value={f.ward} onChange={e => set('ward', e.target.value)} />
       </Stack>
@@ -311,7 +311,7 @@ export default function DsoWizard() {
       </BottomBar>
 
       <CameraCapture open={cam} onClose={() => setCam(false)} onSave={addPhoto} facilityName={f.name} officerName={user.fullName} officerId={user.id}
-        taluka={f.taluka} ward={f.ward} pin={f.lat != null ? { lat: f.lat, lng: f.lng! } : null}
+        taluka={f.taluka} ward={f.ward} district={districtOf(f.district)} pin={f.lat != null ? { lat: f.lat, lng: f.lng! } : null}
         existingHashes={db.facilities.flatMap(x => x.photos.map(p => p.sha256)).concat(f.photos.map(p => p.sha256))} defaultCaption={nextCaption} />
     </>
   )

@@ -4,7 +4,7 @@ import { Alert, Box, Button, Card, CardActionArea, Chip, Container, FormControl,
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Icon, TopBar } from '../components/ui'
-import { useDb, resetDemo } from '../data/store'
+import { useDb, resetDemo, REMOTE } from '../data/store'
 import { computeScore, BAND_COLORS, weeklyUsersFromQr, MIN_SCANS_FOR_QR } from '../lib/score'
 import type { ScoreResult } from '../lib/score'
 import { CWG_SPORTS, ESCALATE_AFTER_DAYS, FACILITY_TYPES, GRIEVANCE_CATEGORIES, SPORTS, DISTRICTS, TALUKAS, talukasOf, districtOf, placeName } from '../lib/constants'
@@ -336,7 +336,7 @@ export default function StateDashboard() {
         )}
 
         <Box sx={{ mt: 4, textAlign: 'right' }}>
-          <Button size="small" color="inherit" startIcon={<Icon name="restart_alt" />} onClick={() => { if (confirm(t('common.resetDemo') + '?')) resetDemo() }}>{t('common.resetDemo')}</Button>
+          <Button size="small" color="inherit" startIcon={<Icon name="restart_alt" />} onClick={() => { if (confirm(REMOTE ? t('sd.loadDemoConfirm') : t('common.resetDemo') + '?')) resetDemo() }}>{REMOTE ? t('sd.loadDemo') : t('common.resetDemo')}</Button>
         </Box>
       </Container>
     </>

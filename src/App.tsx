@@ -1,4 +1,5 @@
-import { CssBaseline, ThemeProvider, Box, CircularProgress } from '@mui/material'
+import { CssBaseline, ThemeProvider, Box, CircularProgress, Snackbar, Alert } from '@mui/material'
+import { useEffect, useState } from 'react'
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { theme } from './theme'
@@ -30,11 +31,27 @@ function Root() {
   return <Navigate to="/map" replace />
 }
 
+/** Shows a message when a save to the shared database fails (e.g. no network). */
+function SyncErrors() {
+  const [msg, setMsg] = useState('')
+  useEffect(() => {
+    const on = (e: Event) => setMsg((e as CustomEvent<string>).detail)
+    window.addEventListener('ks-sync-error', on)
+    return () => window.removeEventListener('ks-sync-error', on)
+  }, [])
+  return (
+    <Snackbar open={!!msg} onClose={() => setMsg('')} autoHideDuration={8000} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+      <Alert severity="error" variant="filled" onClose={() => setMsg('')}>Could not save to the database — {msg}</Alert>
+    </Snackbar>
+  )
+}
+
 export default function App() {
   useDb()
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <SyncErrors />
       {!isReady() ? (
         <Box sx={{ height: '100vh', display: 'grid', placeItems: 'center' }}><CircularProgress /></Box>
       ) : (

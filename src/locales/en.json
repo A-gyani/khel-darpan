@@ -607,6 +607,8 @@
       "howTo": "Ready = at least one CWG venue in Good condition. Tap a sport to see its venues.",
       "venues_one": "{{count}} venue",
       "venues_other": "{{count}} venues"
-    }
+    },
+    "loadDemo": "Load demo data into the database",
+    "loadDemoConfirm": "This deletes everything in the database and loads the demo facilities, check-ins and complaints. Continue?"
   }
 }

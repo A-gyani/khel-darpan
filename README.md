@@ -33,8 +33,18 @@ Camera and GPS need HTTPS or localhost. To test on a phone, use the GitHub Pages
 Login page photo: put a file at `public/brand/login-photo.jpg`.
 
 ## Data
-Without Supabase keys the app runs in **local demo mode**: data is kept in each browser (IndexedDB) and preloaded with demo data.
-Supabase (shared data across devices) is the next step — add keys to `.env` (see `.env.example`) and as GitHub repository secrets.
+- **Local demo mode** (no keys): data kept in each browser, preloaded with demo data.
+- **Shared database (Supabase)**: one database for all phones and laptops. Permissions are enforced in the database:
+  citizens see only approved facilities and can check in / report / rate; a DSO reads and writes only their district and cannot approve; the State officer sees everything.
+
+### Connect Supabase (one time)
+1. supabase.com → sign up (free, no card) → **New project** (region: Mumbai). Wait ~2 minutes.
+2. **SQL Editor → New query**: paste  → Run. Then paste  → Run.
+3. **Project Settings → API**: copy the **Project URL** and the **anon public** key. (Never share the service_role key.)
+4. Put them in  (local) and in GitHub → repo → Settings → Secrets → Actions as  and .
+5. Log in as the State officer → Dashboard → bottom: **Load demo data into the database**.
+
+Note: the prototype loads all rows a user may see; at state scale (34 districts) lists should be fetched page by page from the server.
 
 ## Deploy (GitHub Pages)
 Push to `main`; `.github/workflows/deploy.yml` builds and publishes. In the repo: Settings → Pages → Source: GitHub Actions.

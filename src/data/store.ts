@@ -1,43 +1,77 @@
-// Data store. Local demo mode: everything kept in this browser (IndexedDB), preloaded with seed data.
-// Supabase mode (when VITE_SUPABASE_URL is set) will plug in behind the same functions.
+// Data store.
+// - Local demo mode (no Supabase keys): everything kept in this browser (IndexedDB), preloaded with seed data.
+// - Supabase mode (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY): one shared database for all devices.
+//   Screens read the same in-memory snapshot; every change is applied locally at once and saved to Supabase in the background.
 import { openDB } from 'idb'
 import { useSyncExternalStore } from 'react'
-import type { DB, Facility, CheckIn, Grievance, Rating, ReviewAction, User } from '../lib/types'
+import type { DB, Facility, CheckIn, Grievance, Rating, ReviewAction, User, AuditEntry } from '../lib/types'
 import { buildSeed, SEED_VERSION } from './seed'
 import { uid } from '../lib/geo'
 import { MAX_CHECKINS_PER_DAY } from '../lib/constants'
+import * as R from './remote'
 
+export const REMOTE = R.REMOTE
 const DB_NAME = 'khel-darpan'
-let state: DB = buildSeed()
+const EMPTY: DB = { version: SEED_VERSION, users: [], facilities: [], checkins: [], grievances: [], ratings: [], reviews: [], audit: [] }
+let state: DB = REMOTE ? EMPTY : buildSeed()
 const listeners = new Set<() => void>()
 let ready = false
+let sessionUserId: string | null = null
 
 const idb = () => openDB(DB_NAME, 1, { upgrade(d) { d.createObjectStore('kv') } })
 
 export async function initStore() {
-  try {
-    const d = await idb()
-    const saved = (await d.get('kv', 'db')) as DB | undefined
-    if (saved && saved.version === SEED_VERSION) state = saved
-    else await d.put('kv', state, 'db')
-  } catch {
-    /* private mode etc. – keep in-memory seed */
+  if (REMOTE) {
+    try {
+      const s = await R.getSession()
+      sessionUserId = s?.user.id ?? null
+      await reload()
+      R.subscribe(() => { void reload() })
+    } catch (e) { R.reportError('load', e) }
+  } else {
+    try {
+      const d = await idb()
+      const saved = (await d.get('kv', 'db')) as DB | undefined
+      if (saved && saved.version === SEED_VERSION) state = saved
+      else await d.put('kv', state, 'db')
+    } catch { /* private mode etc. – keep in-memory seed */ }
   }
   ready = true
-  state = { ...state } // new snapshot so subscribers re-render
+  state = { ...state }
   emit()
+}
+
+/** Supabase: fetch everything this user may see. */
+export async function reload() {
+  if (!REMOTE) return
+  try {
+    const data = await R.loadAll(!!sessionUserId)
+    state = { version: SEED_VERSION, ...data }
+    emit()
+  } catch (e) { R.reportError('load', e) }
 }
 
 function emit() { listeners.forEach(l => l()) }
 
 async function persist() {
+  if (REMOTE) return
   try { const d = await idb(); await d.put('kv', state, 'db') } catch { /* ignore */ }
 }
 
+let pendingAudit: AuditEntry[] = []
 function commit(next: DB) {
   state = next
   emit()
   void persist()
+  if (REMOTE && pendingAudit.length && sessionUserId) {
+    const rows = pendingAudit.map(R.rowOf.audit); pendingAudit = []
+    R.insertRows('audit', rows).catch(e => R.reportError('history', e))
+  } else pendingAudit = []
+}
+/** Run a Supabase write in the background; report failures to the screen. */
+function sync(where: string, job: () => Promise<unknown>) {
+  if (!REMOTE) return
+  job().catch(e => R.reportError(where, e))
 }
 
 export function useDb(): DB {
@@ -47,15 +81,31 @@ export const isReady = () => ready
 export const getDb = () => state
 
 export async function resetDemo() {
+  if (REMOTE) {
+    try { await R.loadDemo(buildSeed(), state.users); await reload() } catch (e) { R.reportError('demo data', e) }
+    return
+  }
   commit(buildSeed())
 }
 
 /* ---------- auth ---------- */
 const SESSION_KEY = 'ks_session'
 export function currentUserId(): string | null {
+  if (REMOTE) return sessionUserId
   try { return localStorage.getItem(SESSION_KEY) } catch { return null }
 }
-export function login(emailOrPhone: string, password?: string): User | null {
+/** Email + password, or (demo OTP) a registered mobile number with no password. */
+export async function login(emailOrPhone: string, password?: string): Promise<User | null> {
+  if (REMOTE) {
+    let email = emailOrPhone
+    if (/^\d{10}$/.test(emailOrPhone)) email = (await R.emailForPhone(emailOrPhone)) || ''
+    if (!email) return null
+    const s = await R.signIn(email, password ?? R.DEMO_PASSWORD)
+    if (!s) return null
+    sessionUserId = s.user.id
+    await reload()
+    return state.users.find(u => u.id === sessionUserId) || null
+  }
   const u = state.users.find(x => x.email.toLowerCase() === emailOrPhone.toLowerCase() || x.phone === emailOrPhone)
   if (!u) return null
   if (password !== undefined && u.password !== password) return null
@@ -64,14 +114,34 @@ export function login(emailOrPhone: string, password?: string): User | null {
   emit()
   return u
 }
-export function findUserByPhone(phone: string) { return state.users.find(u => u.phone === phone) || null }
-export function logout() { try { localStorage.removeItem(SESSION_KEY) } catch { /* ignore */ } state = { ...state }; emit() }
+export async function phoneRegistered(phone: string): Promise<boolean> {
+  if (REMOTE) return !!(await R.emailForPhone(phone))
+  return state.users.some(u => u.phone === phone)
+}
+export function logout() {
+  if (REMOTE) {
+    sessionUserId = null
+    state = EMPTY; emit()
+    R.signOut().then(() => reload())
+    return
+  }
+  try { localStorage.removeItem(SESSION_KEY) } catch { /* ignore */ }
+  state = { ...state }; emit()
+}
 
 /* ---------- facilities ---------- */
 const now = () => new Date().toISOString()
 
 function audit(db: DB, actor: string, facilityId: string, action: string, detail = ''): DB {
-  return { ...db, audit: [...db.audit, { id: uid(), actor, facilityId, action, detail, at: now() }] }
+  const a = { id: uid(), actor, facilityId, action, detail, at: now() }
+  pendingAudit.push(a)
+  return { ...db, audit: [...db.audit, a] }
+}
+
+/** After a Supabase save, swap in the stored version (photo links instead of large image data). */
+function replaceSaved(saved: Facility) {
+  state = { ...state, facilities: state.facilities.map(x => (x.id === saved.id ? { ...saved, status: x.status, published: x.published } : x)) }
+  emit()
 }
 
 export function saveFacility(f: Facility, actor: string, changed: string[] = []) {
@@ -89,6 +159,7 @@ export function saveFacility(f: Facility, actor: string, changed: string[] = [])
   }
   const facilities = exists ? state.facilities.map(x => (x.id === f.id ? updated : x)) : [...state.facilities, updated]
   commit(audit({ ...state, facilities }, actor, f.id, exists ? 'updated' : 'created', changed.join(', ')))
+  sync('save facility', async () => replaceSaved(await R.putFacility(updated)))
 }
 
 export function submitFacility(id: string, actor: string) {
@@ -99,6 +170,8 @@ export function submitFacility(id: string, actor: string) {
     return { ...f, status: 'submitted' as const, submittedAt: now(), published }
   })
   commit(audit({ ...state, facilities }, actor, id, 'submitted'))
+  const f = facilities.find(x => x.id === id)!
+  sync('submit', async () => replaceSaved(await R.putFacility(f)))
 }
 
 export function reviewFacility(id: string, actor: string, action: ReviewAction['action'], comment: string, reasons: string[] = []) {
@@ -109,8 +182,14 @@ export function reviewFacility(id: string, actor: string, action: ReviewAction['
     lastVerifiedAt: action === 'approved' ? now() : f.lastVerifiedAt,
     published: action === 'approved' ? null : f.published,
   })
-  const reviews = [...state.reviews, { id: uid(), facilityId: id, by: actor, action, comment, reasons, at: now() }]
+  const review: ReviewAction = { id: uid(), facilityId: id, by: actor, action, comment, reasons, at: now() }
+  const reviews = [...state.reviews, review]
   commit(audit({ ...state, facilities, reviews }, actor, id, action, [reasons.length ? `[${reasons.join(', ')}]` : '', comment].filter(Boolean).join(' ')))
+  const f = facilities.find(x => x.id === id)!
+  sync('review', async () => {
+    await R.putFacility(f, action === 'approved' ? { ...f, published: null } : undefined)
+    await R.insertOne('reviews', R.rowOf.review(review))
+  })
 }
 
 /** DSO can delete only their own drafts (never submitted or approved records). */
@@ -118,6 +197,7 @@ export function deleteDraft(id: string, actor: string): boolean {
   const f = state.facilities.find(x => x.id === id)
   if (!f || f.status !== 'draft') return false
   commit(audit({ ...state, facilities: state.facilities.filter(x => x.id !== id) }, actor, id, 'deleted', f.name))
+  sync('delete draft', () => R.deleteFacilityRow(id))
   return true
 }
 
@@ -131,6 +211,8 @@ export function publicFacilities(db: DB): Facility[] {
 }
 
 /* ---------- QR: check-ins, grievances, ratings ---------- */
+const districtOfFacility = (id: string) => state.facilities.find(f => f.id === id)?.district
+
 function todayKey(facilityId: string) {
   return `ks_ci_${facilityId}_${new Date().toISOString().slice(0, 10)}`
 }
@@ -140,20 +222,34 @@ export function checkInsLeftToday(facilityId: string) {
 export function addCheckIn(c: Omit<CheckIn, 'id' | 'at'>): boolean {
   if (checkInsLeftToday(c.facilityId) <= 0) return false
   try { localStorage.setItem(todayKey(c.facilityId), String(MAX_CHECKINS_PER_DAY - checkInsLeftToday(c.facilityId) + 1)) } catch { /* ignore */ }
-  commit({ ...state, checkins: [...state.checkins, { ...c, id: uid(), at: now() }] })
+  const row: CheckIn = { ...c, id: uid(), at: now() }
+  commit({ ...state, checkins: [...state.checkins, row] })
+  sync('check-in', () => R.insertOne('checkins', R.rowOf.checkin(row, districtOfFacility(c.facilityId))))
   return true
 }
 
+/** Reference number that is unique without reading other complaints (citizens cannot). */
+function newRef() {
+  const d = new Date()
+  return `KSG-${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+}
+
 export function addGrievance(g: Omit<Grievance, 'id' | 'ref' | 'at' | 'status' | 'resolvedAt' | 'resolutionNote'>): string {
-  const ref = 'KSG-' + String(2611001 + state.grievances.length)
-  commit({ ...state, grievances: [...state.grievances, { ...g, id: uid(), ref, at: now(), status: 'open', resolvedAt: null, resolutionNote: '' }] })
-  return ref
+  const row: Grievance = { ...g, id: uid(), ref: newRef(), at: now(), status: 'open', resolvedAt: null, resolutionNote: '' }
+  commit({ ...state, grievances: [...state.grievances, row] })
+  sync('complaint', async () => {
+    const photo = row.photo && row.photo.startsWith('data:') ? await R.uploadReportPhoto(row.photo, row.id) : row.photo
+    await R.insertOne('grievances', R.rowOf.grievance({ ...row, photo }, districtOfFacility(g.facilityId)))
+  })
+  return row.ref
 }
 
 export function resolveGrievance(id: string, note: string, actor: string) {
   const g = state.grievances.find(x => x.id === id)
   const grievances = state.grievances.map(x => x.id === id ? { ...x, status: 'resolved' as const, resolvedAt: now(), resolutionNote: note } : x)
   commit(audit({ ...state, grievances }, actor, g?.facilityId || '', 'grievance_resolved', `${g?.ref}: ${note}`))
+  const updated = grievances.find(x => x.id === id)
+  if (updated) sync('resolve complaint', () => R.updateGrievance(updated))
 }
 
 const rateKey = (facilityId: string) => `ks_rt_${facilityId}_${new Date().toISOString().slice(0, 10)}`
@@ -164,7 +260,9 @@ export function ratedToday(facilityId: string) {
 export function addRating(r: Omit<Rating, 'id' | 'at'>): boolean {
   if (ratedToday(r.facilityId)) return false
   try { localStorage.setItem(rateKey(r.facilityId), '1') } catch { /* ignore */ }
-  commit({ ...state, ratings: [...state.ratings, { ...r, id: uid(), at: now() }] })
+  const row: Rating = { ...r, id: uid(), at: now() }
+  commit({ ...state, ratings: [...state.ratings, row] })
+  sync('rating', () => R.insertOne('ratings', R.rowOf.rating(row)))
   return true
 }
 

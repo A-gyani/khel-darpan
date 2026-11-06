@@ -3,7 +3,7 @@ import { Alert, Box, Button, Card, CardContent, Stack, Tab, Tabs, TextField, Typ
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Icon, LangButton } from '../components/ui'
-import { login, findUserByPhone } from '../data/store'
+import { login, phoneRegistered } from '../data/store'
 import { DEMO_OTP } from '../lib/constants'
 import { home } from '../lib/routes'
 
@@ -43,22 +43,30 @@ export default function Login() {
   const [otp, setOtp] = useState('')
   const [err, setErr] = useState('')
 
-  function doEmail(e: React.FormEvent) {
+  const [busy, setBusy] = useState(false)
+  async function doEmail(e: React.FormEvent) {
     e.preventDefault()
-    const u = login(email.trim(), password)
+    setBusy(true); setErr('')
+    const u = await login(email.trim(), password)
+    setBusy(false)
     if (!u) return setErr(t('login.error'))
     nav(home(u.role))
   }
-  function sendOtp(e: React.FormEvent) {
+  async function sendOtp(e: React.FormEvent) {
     e.preventDefault()
-    if (!findUserByPhone(phone.trim())) return setErr(t('login.noUser'))
+    setBusy(true)
+    const ok = await phoneRegistered(phone.trim())
+    setBusy(false)
+    if (!ok) return setErr(t('login.noUser'))
     setErr(''); setOtpSent(true)
   }
-  function verify(e: React.FormEvent) {
+  async function verify(e: React.FormEvent) {
     e.preventDefault()
     if (otp !== DEMO_OTP) return setErr(t('login.otpError'))
-    const u = login(phone.trim())
-    if (u) nav(home(u.role))
+    setBusy(true)
+    const u = await login(phone.trim())
+    setBusy(false)
+    if (u) nav(home(u.role)); else setErr(t('login.error'))
   }
 
   return (
@@ -92,14 +100,14 @@ export default function Login() {
               <Stack component="form" spacing={2} onSubmit={doEmail}>
                 <TextField label={t('login.email')} type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="username" />
                 <TextField label={t('login.password')} type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" />
-                <Button type="submit" variant="contained" size="large" endIcon={<Icon name="arrow_forward" />}>{t('login.title')}</Button>
+                <Button type="submit" variant="contained" size="large" disabled={busy} endIcon={<Icon name="arrow_forward" />}>{t('login.title')}</Button>
               </Stack>
             )}
             {tab === 1 && !otpSent && (
               <Stack component="form" spacing={2} onSubmit={sendOtp}>
                 <TextField label={t('login.mobile')} value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                   inputMode="numeric" InputProps={{ startAdornment: <InputAdornment position="start">+91</InputAdornment> }} />
-                <Button type="submit" variant="contained" size="large" disabled={phone.length !== 10} endIcon={<Icon name="sms" />}>{t('login.sendOtp')}</Button>
+                <Button type="submit" variant="contained" size="large" disabled={busy || phone.length !== 10} endIcon={<Icon name="sms" />}>{t('login.sendOtp')}</Button>
               </Stack>
             )}
             {tab === 1 && otpSent && (
@@ -107,7 +115,7 @@ export default function Login() {
                 <Alert severity="info" icon={<Icon name="info" />}>{t('login.demoOtp', { otp: DEMO_OTP })}</Alert>
                 <TextField label={t('login.otp')} value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoFocus
                   inputProps={{ style: { letterSpacing: 8, fontSize: 22, textAlign: 'center' } }} />
-                <Button type="submit" variant="contained" size="large" disabled={otp.length !== 6} endIcon={<Icon name="arrow_forward" />}>{t('login.verify')}</Button>
+                <Button type="submit" variant="contained" size="large" disabled={busy || otp.length !== 6} endIcon={<Icon name="arrow_forward" />}>{t('login.verify')}</Button>
                 <Button variant="text" onClick={() => { setOtpSent(false); setOtp('') }}>{t('common.back')}</Button>
               </Stack>
             )}

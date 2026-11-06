@@ -59,7 +59,7 @@
   "public": {
     "searchPh": "Search facility, sport or area", "sport": "Sport", "type": "Type", "taluka": "Taluka", "fee": "Fee",
     "womenFriendly": "Women-friendly", "accessible": "Accessible", "openNow": "Open now", "results": "{{count}} facilities",
-    "nearest": "Nearest first", "allowLocation": "Allow location to sort by distance", "noResults": "No facility matches these filters",
+    "nearest": "Nearest first", "locating": "Finding you…", "sortedByDistance": "Showing facilities nearest to you. Tap again to turn off.", "locDenied": "Location is blocked. Allow location for this site in your browser settings.", "locTimeout": "Could not get your location in time. Try again outdoors or turn on GPS.", "locUnavailable": "Location is not available on this device.", "allowLocation": "Allow location to sort by distance", "noResults": "No facility matches these filters",
     "officerLogin": "Officer login", "officialLogin": "Official login", "officials": "Officials", "myDashboard": "My dashboard", "rating": "Citizen rating", "ratings": "{{count}} ratings", "noRatings": "No ratings yet",
     "timings": "Timings", "closed": "Closed", "sports": "Sports", "amenities": "Amenities", "booking": "Booking", "capacity": "Capacity",
     "coach": "Coach available", "womenSlots": "Women-only slots", "para": "Para-sports support", "schools": "Open to schools",

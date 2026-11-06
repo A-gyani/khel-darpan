@@ -19,14 +19,20 @@ function pinIcon(color: string, icon = 'sports', big = false) {
   return iconCache.get(key)!
 }
 
-function Fit({ pins, center }: { pins: MapPin[]; center?: [number, number] }) {
+function Fit({ pins, center, focus }: { pins: MapPin[]; center?: [number, number]; focus?: [number, number][] }) {
   const map = useMap()
+  const focusKey = focus?.map(p => p.join(',')).join(';') || ''
   useEffect(() => {
+    if (focus && focus.length) {
+      if (focus.length === 1) map.setView(focus[0], 14, { animate: false })
+      else map.fitBounds(L.latLngBounds(focus), { padding: [48, 48], maxZoom: 15, animate: false })
+      return
+    }
     // no animation: avoids Leaflet errors if the page changes mid-zoom
     if (center) { map.setView(center, Math.max(map.getZoom(), 16), { animate: false }); return }
     if (pins.length > 1) map.fitBounds(L.latLngBounds(pins.map(p => [p.lat, p.lng] as [number, number])), { padding: [40, 40], maxZoom: 14, animate: false })
     else if (pins.length === 1) map.setView([pins[0].lat, pins[0].lng], 15, { animate: false })
-  }, [pins.length, center?.[0], center?.[1]]) // eslint-disable-line
+  }, [pins.length, center?.[0], center?.[1], focusKey]) // eslint-disable-line
   return null
 }
 
@@ -35,7 +41,7 @@ function ClickHandler({ onClick }: { onClick?: (lat: number, lng: number) => voi
   return null
 }
 
-export function MapView({ pins, onPinClick, height = '100%', draggablePinId, onDrag, onMapClick, center, extraPins }: {
+export function MapView({ pins, onPinClick, height = '100%', draggablePinId, onDrag, onMapClick, center, extraPins, focus }: {
   pins: MapPin[]
   onPinClick?: (id: string) => void
   height?: number | string
@@ -44,11 +50,13 @@ export function MapView({ pins, onPinClick, height = '100%', draggablePinId, onD
   onMapClick?: (lat: number, lng: number) => void
   center?: [number, number]
   extraPins?: MapPin[]
+  /** points the map should zoom to show (e.g. user + nearest facilities) */
+  focus?: [number, number][]
 }) {
   return (
     <MapContainer center={[23.0225, 72.5714]} zoom={11} style={{ height, width: '100%' }} scrollWheelZoom>
       <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <Fit pins={pins} center={center} />
+      <Fit pins={pins} center={center} focus={focus} />
       <ClickHandler onClick={onMapClick} />
       {pins.map(p => (
         <Marker key={p.id} position={[p.lat, p.lng]} icon={pinIcon(p.color, p.icon, p.id === draggablePinId)} title={p.label}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Box, Button, Card, CardActionArea, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputBase, InputLabel, MenuItem, Paper, Select, Stack, ToggleButton, ToggleButtonGroup, Typography, IconButton } from '@mui/material'
+import { Box, Button, Card, CardActionArea, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputBase, InputLabel, MenuItem, Paper, Select, Stack, ToggleButton, ToggleButtonGroup, Typography, IconButton, CircularProgress, Snackbar } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Icon, Stars, DemoBadge, useCurrentUser, LangButton } from '../components/ui'
@@ -35,6 +35,8 @@ export default function PublicMap() {
   const [view, setView] = useState<'map' | 'list'>('map')
   const [sel, setSel] = useState<string | null>(null)
   const [me, setMe] = useState<{ lat: number; lng: number } | null>(null)
+  const [locating, setLocating] = useState(false)
+  const [toast, setToast] = useState('')
 
   const all = publicFacilities(db)
   const list = useMemo(() => {
@@ -62,7 +64,24 @@ export default function PublicMap() {
   const selected = list.find(x => x.id === sel)
 
   async function locate() {
-    try { const p = await getPosition(); setMe({ lat: p.coords.latitude, lng: p.coords.longitude }) } catch { /* denied */ }
+    if (me) { setMe(null); return } // tap again to turn off
+    if (locating) return
+    setLocating(true)
+    try {
+      // quick, battery-friendly fix is enough for sorting; accept a reading up to 1 minute old
+      const p = await new Promise<GeolocationPosition>((res, rej) => {
+        if (!navigator.geolocation) return rej({ code: 0 })
+        navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 })
+      })
+      setMe({ lat: p.coords.latitude, lng: p.coords.longitude })
+      setSel(null)
+      setToast(t('public.sortedByDistance'))
+    } catch (e) {
+      const code = (e as GeolocationPositionError)?.code
+      setToast(code === 1 ? t('public.locDenied') : code === 3 ? t('public.locTimeout') : t('public.locUnavailable'))
+    } finally {
+      setLocating(false)
+    }
   }
 
   const quickChip = (key: 'women' | 'accessible' | 'openNow', label: string, icon: string) => (
@@ -100,10 +119,10 @@ export default function PublicMap() {
         <Stack direction="row" gap={1} sx={{ mt: 1, overflowX: 'auto', pb: 0.5, mx: { xs: -1.5, sm: 0 }, px: { xs: 1.5, sm: 0 }, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
           <Chip icon={<Icon name="tune" size={18} />} label={`${t('common.filters')}${activeCount ? ` · ${activeCount}` : ''}`} onClick={() => { setDraft(f); setOpen(true) }}
             color={activeCount ? 'secondary' : 'default'} sx={{ flexShrink: 0 }} />
+          <Chip icon={locating ? <CircularProgress size={16} sx={{ ml: '8px !important' }} /> : <Icon name={me ? 'close' : 'near_me'} size={18} color={me ? '#fff' : undefined} />} label={locating ? t('public.locating') : t('public.nearest')} onClick={locate} color={me ? 'primary' : 'default'} variant={me ? 'filled' : 'outlined'} sx={{ bgcolor: me ? undefined : '#fff', flexShrink: 0 }} />
           {quickChip('openNow', t('public.openNow'), 'schedule')}
           {quickChip('women', t('public.womenFriendly'), 'woman')}
           {quickChip('accessible', t('public.accessible'), 'accessible')}
-          <Chip icon={<Icon name="near_me" size={18} />} label={t('public.nearest')} onClick={locate} color={me ? 'primary' : 'default'} variant={me ? 'filled' : 'outlined'} sx={{ bgcolor: me ? undefined : '#fff', flexShrink: 0 }} />
         </Stack>
       </Box>
 
@@ -111,7 +130,8 @@ export default function PublicMap() {
         {view === 'map' ? (
           <MapView pins={list.map(x => ({ id: x.id, lat: x.lat!, lng: x.lng!, color: x.id === sel ? brand.orange : brand.blue, icon: typeIcon(x.type), label: x.name }))}
             onPinClick={setSel}
-            extraPins={me ? [{ id: 'me', lat: me.lat, lng: me.lng, color: '#1A73E8', icon: 'person' }] : []} />
+            extraPins={me ? [{ id: 'me', lat: me.lat, lng: me.lng, color: '#1A73E8', icon: 'person' }] : []}
+            focus={me ? [[me.lat, me.lng] as [number, number], ...list.slice(0, 3).map(x => [x.lat!, x.lng!] as [number, number])] : undefined} />
         ) : (
           <Box sx={{ height: '100%', overflowY: 'auto', p: 1.5, pt: 8, pb: 'calc(16px + env(safe-area-inset-bottom))' }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{t('public.results', { count: list.length })}{!me && ` · ${t('public.allowLocation')}`}</Typography>
@@ -135,6 +155,8 @@ export default function PublicMap() {
           <Chip label={t('public.results', { count: list.length })} sx={{ position: 'absolute', left: 12, bottom: 'calc(16px + env(safe-area-inset-bottom))', zIndex: 1000, bgcolor: '#fff', boxShadow: 2 }} />
         )}
       </Box>
+
+      <Snackbar open={!!toast} autoHideDuration={3500} onClose={() => setToast('')} message={toast} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }} sx={{ bottom: { xs: 'calc(64px + env(safe-area-inset-bottom))' } }} />
 
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle>{t('common.filters')}</DialogTitle>

@@ -14,7 +14,7 @@
     "tabEmail": "ઈમેલ", "tabOtp": "મોબાઇલ OTP", "public": "નાગરિક તરીકે આગળ વધો", "publicHint": "સુવિધા શોધવા, ચેક-ઇન કરવા કે ફરિયાદ કરવા લોગિનની જરૂર નથી",
     "error": "ખોટો ઈમેલ અથવા પાસવર્ડ", "otpError": "ખોટો OTP", "noUser": "આ મોબાઇલ નંબર નોંધાયેલ નથી",
     "demoOtp": "ડેમો મોડ: OTP {{otp}} છે", "photoSpace": "ફોટાની જગ્યા", "photoHint": "અહીં સુવિધાનો ફોટો ઉમેરો",
-    "demoUsers": "ડેમો લોગિન README માં છે"
+    "demoUsers": "ડેમો લોગિન README માં છે", "backToSearch": "સુવિધા શોધો"
   },
   "role": { "public": "નાગરિક", "district_officer": "જિલ્લા રમત-ગમત અધિકારી", "state_officer": "રાજ્ય અધિકારી" },
   "status": { "draft": "ડ્રાફ્ટ", "submitted": "મોકલેલ", "approved": "મંજૂર", "returned": "પરત", "rejected": "નામંજૂર" },
@@ -60,7 +60,7 @@
     "searchPh": "સુવિધા, રમત અથવા વિસ્તાર શોધો", "sport": "રમત", "type": "પ્રકાર", "taluka": "તાલુકો", "fee": "ફી",
     "womenFriendly": "મહિલાઓ માટે અનુકૂળ", "accessible": "દિવ્યાંગ માટે અનુકૂળ", "openNow": "હમણાં ખુલ્લું", "results": "{{count}} સુવિધાઓ",
     "nearest": "નજીકની પહેલા", "allowLocation": "અંતર મુજબ ગોઠવવા લોકેશન આપો", "noResults": "આ ફિલ્ટર મુજબ કોઈ સુવિધા નથી",
-    "officerLogin": "અધિકારી લોગિન", "rating": "નાગરિક રેટિંગ", "ratings": "{{count}} રેટિંગ", "noRatings": "હજુ રેટિંગ નથી",
+    "officerLogin": "અધિકારી લોગિન", "officialLogin": "અધિકારી લોગિન", "officials": "અધિકારી", "myDashboard": "મારું ડેશબોર્ડ", "rating": "નાગરિક રેટિંગ", "ratings": "{{count}} રેટિંગ", "noRatings": "હજુ રેટિંગ નથી",
     "timings": "સમય", "closed": "બંધ", "sports": "રમતો", "amenities": "સુવિધાઓ", "booking": "બુકિંગ", "capacity": "ક્ષમતા",
     "coach": "કોચ ઉપલબ્ધ", "womenSlots": "મહિલાઓ માટે અલગ સમય", "para": "પેરા-સ્પોર્ટ્સ સહાય", "schools": "શાળાઓ માટે ખુલ્લું",
     "underReview": "નવી વિગતો ચકાસણી હેઠળ છે"

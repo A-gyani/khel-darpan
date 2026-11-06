@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { Alert, Box, Button, Card, CardContent, Divider, Stack, Tab, Tabs, TextField, Typography, InputAdornment } from '@mui/material'
+import { Alert, Box, Button, Card, CardContent, Stack, Tab, Tabs, TextField, Typography, InputAdornment } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Icon } from '../components/ui'
-import { toggleLang } from '../i18n'
+import { Icon, LangButton } from '../components/ui'
 import { login, findUserByPhone } from '../data/store'
 import { DEMO_OTP } from '../lib/constants'
 import { home } from '../lib/routes'
@@ -13,21 +12,21 @@ function PhotoSpace() {
   const { t } = useTranslation()
   const [missing, setMissing] = useState(false)
   return (
-    <Box sx={{ position: 'relative', flex: 1, minHeight: { xs: 240, md: '100vh' }, bgcolor: '#E3ECF6', overflow: 'hidden' }}>
+    <Box sx={{ position: 'relative', flex: { md: 1 }, height: { xs: '30dvh', md: 'auto' }, minHeight: { xs: 180, md: '100vh' }, maxHeight: { xs: 280, md: 'none' }, bgcolor: '#E3ECF6', overflow: 'hidden', flexShrink: 0 }}>
       {!missing && (
         <Box component="img" src="./brand/login-photo.jpg" alt="" onError={() => setMissing(true)}
           sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
       {missing && (
-        <Stack alignItems="center" justifyContent="center" sx={{ position: 'absolute', inset: 0, color: '#5B6B7E', border: '2px dashed #A9BBD0', m: 2, borderRadius: 4 }}>
-          <Icon name="add_photo_alternate" size={56} />
+        <Stack alignItems="center" justifyContent="center" sx={{ position: 'absolute', inset: 0, color: '#5B6B7E', border: '2px dashed #A9BBD0', m: 2, borderRadius: '16px' }}>
+          <Icon name="add_photo_alternate" size={44} />
           <Typography sx={{ mt: 1 }} fontWeight={500}>{t('login.photoSpace')}</Typography>
           <Typography variant="body2">{t('login.photoHint')}</Typography>
         </Stack>
       )}
-      <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, p: { xs: 2, md: 4 }, background: 'linear-gradient(transparent, rgba(0,0,0,.55))', color: '#fff' }}>
-        <Typography variant="h2" sx={{ fontSize: { xs: '1.4rem', md: '2.2rem' } }}>{t('app.name')}</Typography>
-        <Typography sx={{ opacity: 0.9 }}>{t('app.tagline')}</Typography>
+      <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, p: { xs: 1.5, md: 4 }, background: 'linear-gradient(transparent, rgba(0,0,0,.55))', color: '#fff' }}>
+        <Typography sx={{ fontSize: { xs: '1.25rem', md: '2.2rem' }, fontWeight: 600, lineHeight: 1.2 }}>{t('app.name')}</Typography>
+        <Typography sx={{ opacity: 0.9, fontSize: { xs: 13, md: 16 } }}>{t('app.tagline')}</Typography>
       </Box>
     </Box>
   )
@@ -63,22 +62,25 @@ export default function Login() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: '100vh' }}>
-      <PhotoSpace />
-      <Stack sx={{ width: { xs: '100%', md: 480 }, p: { xs: 2, md: 5 }, justifyContent: 'center', bgcolor: 'background.default' }}>
-        <Stack direction="row" alignItems="center" gap={1.5} sx={{ mb: 3 }}>
-          <Box component="img" src="./brand/sag-logo.png" alt="Sports Authority of Gujarat" sx={{ height: 56 }} />
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" color="text.secondary">{t('app.dept')}</Typography>
-            <Box sx={{ height: 40, width: 120, border: '1px dashed #C4CFDB', borderRadius: 2, display: 'grid', placeItems: 'center', mt: 0.5 }}>
-              <Typography variant="caption" color="text.secondary">Govt. logo</Typography>
-            </Box>
+    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: '100dvh', bgcolor: 'background.default' }}>
+      <Box sx={{ position: { xs: 'relative', md: 'static' }, display: 'flex', flex: { md: 1 } }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}><PhotoSpace /></Box>
+        <Stack direction="row" sx={{ position: 'absolute', top: 'calc(8px + env(safe-area-inset-top))', left: 8, right: 8, zIndex: 2, justifyContent: 'space-between' }}>
+          <Button onClick={() => nav('/map')} startIcon={<Icon name="arrow_back" />} sx={{ bgcolor: 'rgba(255,255,255,.92)', '&:hover': { bgcolor: '#fff' }, px: 1.5 }}>{t('login.backToSearch')}</Button>
+          <Box sx={{ bgcolor: 'rgba(255,255,255,.92)', borderRadius: 100 }}><LangButton /></Box>
+        </Stack>
+      </Box>
+      <Stack sx={{ width: { xs: '100%', md: 480 }, px: { xs: 2, md: 5 }, py: { xs: 2, md: 5 }, pb: 'calc(16px + env(safe-area-inset-bottom))', justifyContent: { md: 'center' }, mx: 'auto', maxWidth: 520, bgcolor: 'background.default' }}>
+        <Stack direction="row" alignItems="center" gap={1.5} sx={{ mb: 2 }}>
+          <Box component="img" src="./brand/sag-logo.png" alt="Sports Authority of Gujarat" sx={{ height: { xs: 44, md: 56 }, flexShrink: 0 }} />
+          <Typography variant="body2" color="text.secondary" sx={{ flex: 1, lineHeight: 1.3 }}>{t('app.dept')}</Typography>
+          <Box sx={{ height: 44, width: 64, flexShrink: 0, border: '1px dashed #C4CFDB', borderRadius: '10px', display: 'grid', placeItems: 'center' }}>
+            <Typography variant="caption" color="text.secondary" align="center" sx={{ fontSize: 10, lineHeight: 1.1 }}>Govt.<br />logo</Typography>
           </Box>
-          <Button size="small" onClick={toggleLang} startIcon={<Icon name="translate" />}>{t('common.language')}</Button>
         </Stack>
 
         <Card>
-          <CardContent sx={{ p: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
             <Typography variant="h3">{t('login.title')}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{t('login.subtitle')}</Typography>
             <Tabs value={tab} onChange={(_, v) => { setTab(v); setErr('') }} variant="fullWidth" sx={{ mb: 2 }}>
@@ -112,9 +114,7 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        <Divider sx={{ my: 3 }} />
-        <Button variant="outlined" size="large" color="secondary" startIcon={<Icon name="map" />} onClick={() => nav('/map')}>{t('login.public')}</Button>
-        <Typography variant="caption" color="text.secondary" align="center" sx={{ mt: 1 }}>{t('login.publicHint')}</Typography>
+        <Typography variant="caption" color="text.secondary" align="center" sx={{ mt: 2 }}>{t('login.publicHint')}</Typography>
       </Stack>
     </Box>
   )

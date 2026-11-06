@@ -18,35 +18,57 @@ export function useCurrentUser(): User | null {
   return db.users.find(u => u.id === id) || null
 }
 
+/** Language switch: icon + label on wider screens, compact "ગુ" / "EN" pill on phones. */
+export function LangButton({ light }: { light?: boolean }) {
+  const { t, i18n } = useTranslation()
+  return (
+    <Tooltip title="Language / ભાષા">
+      <Button size="small" variant="text" onClick={toggleLang} aria-label="Language / ભાષા"
+        sx={{ minWidth: 0, px: { xs: 1, sm: 1.5 }, minHeight: 40, color: light ? '#fff' : undefined, flexShrink: 0 }}>
+        <Icon name="translate" size={20} />
+        <Box component="span" sx={{ ml: 0.5, display: { xs: 'none', sm: 'inline' } }}>{t('common.language')}</Box>
+        <Box component="span" sx={{ ml: 0.5, display: { xs: 'inline', sm: 'none' }, fontWeight: 700 }}>{i18n.language === 'gu' ? 'EN' : 'ગુ'}</Box>
+      </Button>
+    </Tooltip>
+  )
+}
+
 export function TopBar({ title, back, actions }: { title?: string; back?: string | boolean; actions?: ReactNode }) {
   const { t } = useTranslation()
   const nav = useNavigate()
   const user = useCurrentUser()
   return (
-    <AppBar position="sticky" className="no-print" sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
-      <Toolbar sx={{ gap: 1, minHeight: 64 }}>
+    <AppBar position="sticky" className="no-print" sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', pt: 'env(safe-area-inset-top)' }}>
+      <Toolbar disableGutters sx={{ gap: { xs: 0.5, sm: 1 }, minHeight: { xs: 56, sm: 64 }, px: { xs: 0.5, sm: 2 } }}>
         {back ? (
           <IconButton aria-label={t('common.back')} onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))}><Icon name="arrow_back" /></IconButton>
         ) : (
-          <Box component="img" src="./brand/sag-logo.png" alt="SAG" sx={{ height: 36, width: 'auto' }} />
+          <Box component="img" src="./brand/sag-logo.png" alt="SAG" onClick={() => nav('/map')} sx={{ height: { xs: 32, sm: 36 }, width: 'auto', mx: { xs: 1, sm: 0 }, cursor: 'pointer', flexShrink: 0 }} />
         )}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="h4" noWrap>{title || t('app.name')}</Typography>
-          {user && <Typography variant="caption" color="text.secondary" noWrap display="block">{t(`role.${user.role}`)} · {user.fullName}</Typography>}
+          <Typography sx={{ fontSize: { xs: '1rem', sm: '1.15rem' }, fontWeight: 500, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {title || t('app.name')}
+          </Typography>
+          {user && <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ lineHeight: 1.3 }}>{t(`role.${user.role}`)}</Typography>}
         </Box>
         {actions}
-        <Tooltip title="Language / ભાષા">
-          <Button size="small" variant="text" onClick={toggleLang} startIcon={<Icon name="translate" />} sx={{ minWidth: 0, px: 1.5 }}>
-            {t('common.language')}
-          </Button>
-        </Tooltip>
+        <LangButton />
         {user && (
           <Tooltip title={t('common.logout')}>
-            <IconButton onClick={() => { logout(); nav('/login') }}><Icon name="logout" /></IconButton>
+            <IconButton onClick={() => { logout(); nav('/map') }} aria-label={t('common.logout')}><Icon name="logout" /></IconButton>
           </Tooltip>
         )}
       </Toolbar>
     </AppBar>
+  )
+}
+
+/** Bottom action bar that respects the phone's home-indicator area. */
+export function BottomBar({ children }: { children: ReactNode }) {
+  return (
+    <Box className="no-print" sx={{ position: 'fixed', left: 0, right: 0, bottom: 0, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider', px: { xs: 1, sm: 2 }, pt: 1, pb: 'calc(8px + env(safe-area-inset-bottom))', zIndex: 1200 }}>
+      <Box sx={{ maxWidth: 900, mx: 'auto' }}>{children}</Box>
+    </Box>
   )
 }
 
@@ -82,8 +104,8 @@ export function ScoreBars({ r }: { r: ScoreResult }) {
             <Typography variant="body2">{t(`pillar.${p.key}`)} <Typography component="span" variant="caption" color="text.secondary">· {p.weight}%{p.source ? ` · ${t(`pillar.${p.source}`)}` : ''}</Typography></Typography>
             <Typography variant="body2" fontWeight={500}>{p.value == null ? t('common.noData') : Math.round(p.value)}</Typography>
           </Stack>
-          <Box sx={{ height: 8, borderRadius: 4, bgcolor: '#E6EBF1', overflow: 'hidden' }}>
-            <Box sx={{ height: '100%', width: `${p.value ?? 0}%`, bgcolor: p.value == null ? 'transparent' : p.value >= 75 ? BAND_COLORS.green : p.value >= 50 ? BAND_COLORS.amber : BAND_COLORS.red, borderRadius: 4 }} />
+          <Box sx={{ height: 8, borderRadius: '4px', bgcolor: '#E6EBF1', overflow: 'hidden' }}>
+            <Box sx={{ height: '100%', width: `${p.value ?? 0}%`, bgcolor: p.value == null ? 'transparent' : p.value >= 75 ? BAND_COLORS.green : p.value >= 50 ? BAND_COLORS.amber : BAND_COLORS.red, borderRadius: '4px' }} />
           </Box>
         </Box>
       ))}

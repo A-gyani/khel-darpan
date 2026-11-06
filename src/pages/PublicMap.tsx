@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import { Box, Button, Card, CardActionArea, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputBase, InputLabel, MenuItem, Paper, Select, Stack, ToggleButton, ToggleButtonGroup, Typography, IconButton } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Icon, Stars, DemoBadge, useCurrentUser } from '../components/ui'
+import { Icon, Stars, DemoBadge, useCurrentUser, LangButton } from '../components/ui'
+import { home } from '../lib/routes'
 import { MapView } from '../components/MapView'
 import { useDb, publicFacilities, avgRating } from '../data/store'
 import { FACILITY_TYPES, SPORTS, TALUKAS } from '../lib/constants'
 import { getPosition, haversine, isOpenNow } from '../lib/geo'
-import { toggleLang } from '../i18n'
 import { brand } from '../theme'
 import type { Facility } from '../lib/types'
 
@@ -71,21 +71,33 @@ export default function PublicMap() {
   )
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* search header */}
-      <Box sx={{ p: 1.5, pb: 1, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', zIndex: 1100 }}>
-        <Stack direction="row" alignItems="center" gap={1}>
-          <Box component="img" src="./brand/sag-logo.png" alt="SAG" sx={{ height: 34, display: { xs: 'none', sm: 'block' } }} />
-          <Paper variant="outlined" sx={{ flex: 1, display: 'flex', alignItems: 'center', px: 1.5, borderRadius: 100, height: 48, bgcolor: '#F1F4F9', border: 'none' }}>
-            <Icon name="search" color="#5B6B7E" />
-            <InputBase sx={{ ml: 1, flex: 1 }} placeholder={t('public.searchPh') as string} value={q} onChange={e => setQ(e.target.value)} />
-            {q && <IconButton size="small" onClick={() => setQ('')}><Icon name="close" /></IconButton>}
-          </Paper>
-          <Button size="small" onClick={toggleLang} sx={{ minWidth: 0 }}>{t('common.language')}</Button>
-          {!user && <IconButton onClick={() => nav('/login')} title={t('public.officerLogin') as string}><Icon name="account_circle" /></IconButton>}
-          {user && <IconButton onClick={() => nav('/')}><Icon name="home" /></IconButton>}
+    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      {/* header: brand + language + official login, then search, then filter chips */}
+      <Box sx={{ px: { xs: 1.5, sm: 2 }, pt: 'calc(8px + env(safe-area-inset-top))', pb: 1, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', zIndex: 1100 }}>
+        <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}>
+          <Box component="img" src="./brand/sag-logo.png" alt="Sports Authority of Gujarat" sx={{ height: { xs: 34, sm: 40 }, flexShrink: 0 }} />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontSize: { xs: '0.98rem', sm: '1.15rem' }, fontWeight: 700, lineHeight: 1.15, color: 'primary.dark' }}>{t('app.name')}</Typography>
+            <Typography variant="caption" color="text.secondary" noWrap sx={{ lineHeight: 1.2, display: { xs: 'none', sm: 'block' } }}>{t('app.tagline')}</Typography>
+          </Box>
+          <LangButton />
+          {user ? (
+            <Button size="small" variant="contained" onClick={() => nav(home(user.role))} startIcon={<Icon name="dashboard" size={20} />} sx={{ flexShrink: 0, px: 1.5, minHeight: 40 }}>
+              {t('public.myDashboard')}
+            </Button>
+          ) : (
+            <Button size="small" variant="outlined" onClick={() => nav('/login')} startIcon={<Icon name="badge" size={20} />} sx={{ flexShrink: 0, px: 1.5, minHeight: 40 }}>
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('public.officialLogin')}</Box>
+              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('public.officials')}</Box>
+            </Button>
+          )}
         </Stack>
-        <Stack direction="row" gap={1} sx={{ mt: 1, overflowX: 'auto', pb: 0.5 }}>
+        <Paper variant="outlined" sx={{ display: 'flex', alignItems: 'center', px: 1.5, borderRadius: 100, height: 48, bgcolor: '#F1F4F9', border: 'none' }}>
+          <Icon name="search" color="#5B6B7E" />
+          <InputBase sx={{ ml: 1, flex: 1, fontSize: 16 }} placeholder={t('public.searchPh') as string} value={q} onChange={e => setQ(e.target.value)} inputProps={{ enterKeyHint: 'search' }} />
+          {q && <IconButton size="small" onClick={() => setQ('')} aria-label={t('common.clear')}><Icon name="close" /></IconButton>}
+        </Paper>
+        <Stack direction="row" gap={1} sx={{ mt: 1, overflowX: 'auto', pb: 0.5, mx: { xs: -1.5, sm: 0 }, px: { xs: 1.5, sm: 0 }, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
           <Chip icon={<Icon name="tune" size={18} />} label={`${t('common.filters')}${activeCount ? ` · ${activeCount}` : ''}`} onClick={() => { setDraft(f); setOpen(true) }}
             color={activeCount ? 'secondary' : 'default'} sx={{ flexShrink: 0 }} />
           {quickChip('openNow', t('public.openNow'), 'schedule')}
@@ -101,7 +113,7 @@ export default function PublicMap() {
             onPinClick={setSel}
             extraPins={me ? [{ id: 'me', lat: me.lat, lng: me.lng, color: '#1A73E8', icon: 'person' }] : []} />
         ) : (
-          <Box sx={{ height: '100%', overflowY: 'auto', p: 1.5 }}>
+          <Box sx={{ height: '100%', overflowY: 'auto', p: 1.5, pt: 8, pb: 'calc(16px + env(safe-area-inset-bottom))' }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{t('public.results', { count: list.length })}{!me && ` · ${t('public.allowLocation')}`}</Typography>
             {list.length === 0 && <Typography sx={{ p: 4, textAlign: 'center' }} color="text.secondary">{t('public.noResults')}</Typography>}
             <Stack spacing={1.5}>{list.map(x => <FacilityCard key={x.id} f={x} me={me} onClick={() => nav(`/f/${x.id}`)} />)}</Stack>
@@ -115,12 +127,12 @@ export default function PublicMap() {
         </ToggleButtonGroup>
 
         {view === 'map' && selected && (
-          <Box sx={{ position: 'absolute', left: 12, right: 12, bottom: 16, zIndex: 1000, maxWidth: 520, mx: 'auto' }}>
+          <Box sx={{ position: 'absolute', left: 8, right: 8, bottom: 'calc(12px + env(safe-area-inset-bottom))', zIndex: 1000, maxWidth: 520, mx: 'auto' }}>
             <FacilityCard f={selected} me={me} onClick={() => nav(`/f/${selected.id}`)} onClose={() => setSel(null)} elevated />
           </Box>
         )}
         {view === 'map' && !selected && (
-          <Chip label={t('public.results', { count: list.length })} sx={{ position: 'absolute', left: 12, bottom: 16, zIndex: 1000, bgcolor: '#fff', boxShadow: 2 }} />
+          <Chip label={t('public.results', { count: list.length })} sx={{ position: 'absolute', left: 12, bottom: 'calc(16px + env(safe-area-inset-bottom))', zIndex: 1000, bgcolor: '#fff', boxShadow: 2 }} />
         )}
       </Box>
 
@@ -170,7 +182,7 @@ function FacilityCard({ f, me, onClick, onClose, elevated }: { f: Facility; me: 
     <Card sx={{ boxShadow: elevated ? 6 : 0, position: 'relative' }}>
       {onClose && <IconButton size="small" onClick={onClose} sx={{ position: 'absolute', right: 4, top: 4, zIndex: 2 }}><Icon name="close" size={20} /></IconButton>}
       <CardActionArea onClick={onClick} sx={{ display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start' }}>
-        <Box component="img" src={f.photos[1]?.thumbUrl || f.photos[0]?.thumbUrl} alt="" sx={{ width: 104, minHeight: 104, objectFit: 'cover', flexShrink: 0, bgcolor: '#E3ECF6' }} />
+        <Box component="img" src={f.photos[1]?.thumbUrl || f.photos[0]?.thumbUrl} alt="" sx={{ width: { xs: 92, sm: 112 }, minHeight: 104, objectFit: 'cover', flexShrink: 0, bgcolor: '#E3ECF6' }} />
         <Box sx={{ p: 1.5, flex: 1, minWidth: 0, pr: 4 }}>
           <Typography fontWeight={500} sx={{ lineHeight: 1.25 }}>{f.name}</Typography>
           <Typography variant="body2" color="text.secondary" noWrap>

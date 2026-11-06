@@ -16,13 +16,13 @@ const C = { blue: brand.blue, orange: brand.orange, green: brand.green, grey: '#
 
 function Kpi({ icon, label, value, sub, color = brand.blue, onClick }: { icon: string; label: string; value: number | string; sub?: string; color?: string; onClick?: () => void }) {
   return (
-    <Card sx={{ flex: '1 1 200px' }}>
-      <CardActionArea onClick={onClick} disabled={!onClick} sx={{ p: 2, height: '100%' }}>
+    <Card>
+      <CardActionArea onClick={onClick} disabled={!onClick} sx={{ p: { xs: 1.5, sm: 2 }, height: '100%' }}>
         <Stack direction="row" alignItems="center" gap={1}>
-          <Box sx={{ width: 40, height: 40, borderRadius: 3, bgcolor: color + '1F', display: 'grid', placeItems: 'center' }}><Icon name={icon} color={color} /></Box>
-          <Typography variant="body2" color="text.secondary">{label}</Typography>
+          <Box sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 }, borderRadius: '12px', bgcolor: color + '1F', display: 'grid', placeItems: 'center', flexShrink: 0 }}><Icon name={icon} color={color} /></Box>
+          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.25, fontSize: { xs: 12.5, sm: 14 } }}>{label}</Typography>
         </Stack>
-        <Typography sx={{ fontSize: 34, fontWeight: 500, mt: 1, lineHeight: 1.1 }}>{value}</Typography>
+        <Typography sx={{ fontSize: { xs: 26, sm: 34 }, fontWeight: 500, mt: 1, lineHeight: 1.1 }}>{value}</Typography>
         {sub && <Typography variant="caption" color="text.secondary">{sub}</Typography>}
       </CardActionArea>
     </Card>
@@ -32,7 +32,7 @@ function Kpi({ icon, label, value, sub, color = brand.blue, onClick }: { icon: s
 function ChartCard({ title, icon, children, note }: { title: string; icon: string; children: React.ReactNode; note?: string }) {
   return (
     <Card sx={{ flex: '1 1 420px', minWidth: 0 }}>
-      <CardContent>
+      <CardContent sx={{ px: { xs: 1.5, sm: 2 }, overflowX: 'auto' }}>
         <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}><Icon name={icon} color={brand.blue} /><Typography variant="h4">{title}</Typography></Stack>
         {note && <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>{note}</Typography>}
         {children}
@@ -103,13 +103,13 @@ export default function StateDashboard() {
   return (
     <>
       <TopBar title={`${t('state.dashboard')} · Ahmedabad`} />
-      <Container maxWidth="xl" sx={{ py: 2, pb: 6 }}>
-        <Stack direction="row" gap={1.5} flexWrap="wrap" sx={{ mb: 2 }}>
+      <Container maxWidth="xl" sx={{ py: 2, pb: 6, px: { xs: 1.5, sm: 3 } }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 1.25, mb: 2 }}>
           <Kpi icon="location_on" label={t('state.total')} value={approved.length} sub={`${db.facilities.length} ${t('common.all').toLowerCase()}`} />
           <Kpi icon="pending_actions" label={t('state.pending')} value={queue.length} color={brand.orange} onClick={() => setTab(0)} />
           <Kpi icon="warning" label={t('state.overdueG')} value={overdue.length} sub={`${openG.length} ${t('dso.open').toLowerCase()}`} color="#C62828" onClick={() => setTab(3)} />
           <Kpi icon="how_to_reg" label={t('state.checkinsWeek')} value={weekCi.length} sub={t('state.people', { count: weekPeople })} color={brand.green} />
-        </Stack>
+        </Box>
 
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ mb: 2 }}>
           <Tab icon={<Icon name="fact_check" />} iconPosition="start" label={`${t('state.review')} (${queue.length})`} />
@@ -129,7 +129,7 @@ export default function StateDashboard() {
               return (
                 <Card key={f.id}>
                   <CardActionArea onClick={() => nav(`/state/review/${f.id}`)} sx={{ p: 1.5, display: 'flex', gap: 1.5, justifyContent: 'flex-start' }}>
-                    <Box component="img" src={f.photos[1]?.thumbUrl || f.photos[0]?.thumbUrl} alt="" sx={{ width: 96, height: 72, borderRadius: 2, objectFit: 'cover', bgcolor: '#E3ECF6' }} />
+                    <Box component="img" src={f.photos[1]?.thumbUrl || f.photos[0]?.thumbUrl} alt="" sx={{ width: { xs: 64, sm: 96 }, height: { xs: 64, sm: 72 }, flexShrink: 0, borderRadius: '10px', objectFit: 'cover', bgcolor: '#E3ECF6' }} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography fontWeight={500} noWrap>{f.name}</Typography>
                       <Typography variant="body2" color="text.secondary">{t('state.submittedOn')} {f.submittedAt ? new Date(f.submittedAt).toLocaleDateString('en-IN') : ''} · {daysSince(f.submittedAt || f.updatedAt)} {t('common.days')}</Typography>
@@ -150,7 +150,7 @@ export default function StateDashboard() {
 
         {tab === 1 && (
           <Stack gap={2}>
-            <Card sx={{ height: 380, overflow: 'hidden', p: 0 }}>
+            <Card sx={{ height: { xs: 300, sm: 380 }, overflow: 'hidden', p: 0 }}>
               <MapView pins={approved.map(({ f, r }) => ({ id: f.id, lat: f.lat!, lng: f.lng!, color: BAND_COLORS[r.band], icon: typeIcon(f.type), label: `${f.name} · ${r.score ?? '–'}` }))}
                 onPinClick={id => nav(`/state/review/${id}`)} />
             </Card>
@@ -160,8 +160,8 @@ export default function StateDashboard() {
             <Stack direction="row" gap={2} flexWrap="wrap">
               <ChartCard title={t('state.bySport')} icon="sports">
                 <ResponsiveContainer width="100%" height={Math.max(220, sportData.length * 26)}>
-                  <BarChart data={sportData} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12 }} />
+                  <BarChart data={sportData} layout="vertical" margin={{ left: 0, right: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="name" width={92} tick={{ fontSize: 11 }} />
                     <Tooltip /><Bar dataKey="n" fill={C.blue} radius={[0, 6, 6, 0]} name={t('state.facilities')} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -190,7 +190,7 @@ export default function StateDashboard() {
               </ChartCard>
               <ChartCard title={t('state.gByCat')} icon="report">
                 <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={gData} layout="vertical" margin={{ left: 20 }}><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11 }} /><Tooltip /><Legend />
+                  <BarChart data={gData} layout="vertical" margin={{ left: 0, right: 8 }}><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="name" width={104} tick={{ fontSize: 10 }} /><Tooltip /><Legend />
                     <Bar dataKey="overdue" stackId="a" fill="#C62828" name={t('dso.overdue')} />
                     <Bar dataKey="open" stackId="a" fill={C.orange} name={t('dso.open')} />
                     <Bar dataKey="resolved" stackId="a" fill={C.green} name={t('dso.resolved')} radius={[0, 6, 6, 0]} />
@@ -237,7 +237,7 @@ export default function StateDashboard() {
         )}
 
         {tab === 3 && (
-          <Card><Table size="small">
+          <Card sx={{ overflowX: 'auto' }}><Table size="small" sx={{ minWidth: 520 }}>
             <TableHead><TableRow><TableCell>Ref</TableCell><TableCell>{t('state.facilities')}</TableCell><TableCell>{t('qr.category')}</TableCell><TableCell align="right">{t('common.days')}</TableCell><TableCell>Status</TableCell></TableRow></TableHead>
             <TableBody>
               {[...db.grievances].sort((a, b) => (a.status === b.status ? a.at.localeCompare(b.at) : a.status === 'open' ? -1 : 1)).map(g => {
@@ -255,7 +255,7 @@ export default function StateDashboard() {
         )}
 
         {tab === 4 && (
-          <Card sx={{ overflowX: 'auto' }}><Table size="small">
+          <Card sx={{ overflowX: 'auto' }}><Table size="small" sx={{ minWidth: 560 }}>
             <TableHead><TableRow><TableCell>{t('public.taluka')}</TableCell><TableCell align="right">{t('state.mapped')}</TableCell><TableCell align="right">{t('state.approved')}</TableCell><TableCell align="right">{t('state.returnRate')}</TableCell><TableCell align="right">{t('state.onTime')}</TableCell><TableCell>{t('state.lastActivity')}</TableCell></TableRow></TableHead>
             <TableBody>
               {progress.map(p => (

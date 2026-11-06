@@ -16,7 +16,7 @@ export function PhotoStrip({ f, flags }: { f: Facility; flags?: boolean }) {
       <Stack direction="row" gap={1} sx={{ overflowX: 'auto', pb: 1 }}>
         {f.photos.map(p => (
           <Box key={p.id} sx={{ position: 'relative', flexShrink: 0, cursor: 'zoom-in' }} onClick={() => setBig(p.dataUrl)}>
-            <Box component="img" src={p.thumbUrl} alt={t(`caption.${p.caption}`) as string} sx={{ width: 200, height: 140, objectFit: 'cover', borderRadius: 3, display: 'block' }} />
+            <Box component="img" src={p.thumbUrl} alt={t(`caption.${p.caption}`) as string} sx={{ width: 200, height: 140, objectFit: 'cover', borderRadius: '12px', display: 'block' }} />
             <Chip size="small" label={t(`caption.${p.caption}`)} sx={{ position: 'absolute', left: 6, bottom: 6, height: 22, bgcolor: 'rgba(0,0,0,.6)', color: '#fff' }} />
             {flags && (p.flagFar || p.flagDuplicate || p.flagPoorGps) && (
               <Stack gap={0.5} sx={{ position: 'absolute', right: 6, top: 6 }}>

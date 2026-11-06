@@ -62,7 +62,7 @@ export default function QrLanding() {
 
   const header = (
     <Stack direction="row" gap={1.5} alignItems="center" sx={{ mb: 3 }}>
-      <Box component="img" src={f.photos[1]?.thumbUrl || f.photos[0]?.thumbUrl} alt="" sx={{ width: 72, height: 72, borderRadius: 3, objectFit: 'cover' }} />
+      <Box component="img" src={f.photos[1]?.thumbUrl || f.photos[0]?.thumbUrl} alt="" sx={{ width: 72, height: 72, borderRadius: '12px', objectFit: 'cover' }} />
       <Box>
         <Typography variant="body2" color="text.secondary">{t('qr.welcome')}</Typography>
         <Typography variant="h3">{f.name}</Typography>
@@ -94,7 +94,7 @@ export default function QrLanding() {
     const btn = (to: string, icon: string, title: string, sub: string, color: string) => (
       <Card sx={{ borderColor: color }}>
         <CardActionArea onClick={() => nav(`${base}/${to}`)} sx={{ p: 2.5, display: 'flex', justifyContent: 'flex-start', gap: 2 }}>
-          <Box sx={{ width: 60, height: 60, borderRadius: 4, bgcolor: color, display: 'grid', placeItems: 'center', flexShrink: 0 }}><Icon name={icon} size={34} color="#fff" fill /></Box>
+          <Box sx={{ width: 60, height: 60, borderRadius: '16px', bgcolor: color, display: 'grid', placeItems: 'center', flexShrink: 0 }}><Icon name={icon} size={34} color="#fff" fill /></Box>
           <Box sx={{ flex: 1 }}>
             <Typography variant="h3">{title}</Typography>
             <Typography variant="body2" color="text.secondary">{sub}</Typography>
@@ -149,7 +149,7 @@ export default function QrLanding() {
             {t('qr.addPhoto')}
             <input hidden type="file" accept="image/*" onChange={e => e.target.files?.[0] && readPhoto(e.target.files[0])} />
           </Button>
-          {photo && <Box component="img" src={photo} alt="" sx={{ display: 'block', mt: 1, maxWidth: 220, borderRadius: 2 }} />}
+          {photo && <Box component="img" src={photo} alt="" sx={{ display: 'block', mt: 1, maxWidth: 220, borderRadius: '10px' }} />}
         </Box>
         <Button size="large" variant="contained" color="error" disabled={!cat} startIcon={<Icon name="send" />}
           onClick={() => { setRef(addGrievance({ facilityId: f.id, category: cat as GrievanceCategory, description: desc, photo })); setDone('report') }}>

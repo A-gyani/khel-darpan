@@ -24,9 +24,9 @@ function Guard({ role, children }: { role: Role; children: ReactNode }) {
 
 import { home } from './lib/routes'
 
+// Landing page for everyone is the citizen search map; officials log in from there.
 function Root() {
-  const user = useCurrentUser()
-  return <Navigate to={user ? home(user.role) : '/login'} replace />
+  return <Navigate to="/map" replace />
 }
 
 export default function App() {

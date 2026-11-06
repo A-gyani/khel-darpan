@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Alert, Box, Button, Card, CardContent, Chip, Container, FormControl, FormControlLabel, IconButton, InputLabel, LinearProgress, MenuItem, Select, Stack, Switch, TextField, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Icon, TopBar, Stars, ScoreBars, ScoreBadge, TagChips, StatusChip, useCurrentUser } from '../components/ui'
+import { Icon, TopBar, Stars, ScoreBars, ScoreBadge, TagChips, StatusChip, useCurrentUser, BottomBar } from '../components/ui'
 import { CameraCapture } from '../components/CameraCapture'
 import { MapView } from '../components/MapView'
 import { useDb, saveFacility, submitFacility } from '../data/store'
@@ -150,7 +150,7 @@ export default function DsoWizard() {
           </Card>
         ))}
         <Card sx={{ borderStyle: 'dashed', borderColor: brand.blue }}>
-          <Button onClick={() => setCam(true)} sx={{ width: '100%', height: '100%', minHeight: 150, flexDirection: 'column', borderRadius: 4 }}>
+          <Button onClick={() => setCam(true)} sx={{ width: '100%', height: '100%', minHeight: 150, flexDirection: 'column', borderRadius: '16px' }}>
             <Icon name="add_a_photo" size={40} /><Typography sx={{ mt: 1 }}>{t('wiz.takePhoto')}</Typography>
           </Button>
         </Card>
@@ -160,7 +160,7 @@ export default function DsoWizard() {
     // 3 Location
     <Stack spacing={2} key="l">
       <Alert severity="info" icon={<Icon name="location_on" />}>{t('wiz.locationHint')}</Alert>
-      <Box sx={{ height: 380, borderRadius: 4, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+      <Box sx={{ height: 380, borderRadius: '16px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
         <MapView pins={f.lat != null ? [{ id: 'pin', lat: f.lat, lng: f.lng!, color: brand.orange, icon: typeIcon(f.type) }] : []} draggablePinId="pin"
           onDrag={movePin} onMapClick={(lat, lng) => f.lat == null && movePin(lat, lng)}
           center={f.lat != null ? [f.lat, f.lng!] : undefined}
@@ -209,18 +209,18 @@ export default function DsoWizard() {
     // 5 Timings & fees
     <Stack spacing={2} key="t">
       <Typography fontWeight={500}>{t('wiz.timings')}</Typography>
-      <Card><CardContent>
+      <Card><CardContent sx={{ px: { xs: 1, sm: 2 } }}>
         {DAYS.map(d => {
           const v = f.timings[d]
           return (
-            <Stack key={d} direction="row" alignItems="center" gap={1.5} sx={{ py: 0.75 }}>
-              <Typography sx={{ width: 48 }}>{t(`day.${d}`)}</Typography>
-              <Switch checked={!!v} onChange={e => set('timings', { ...f.timings, [d]: e.target.checked ? { open: '06:00', close: '20:00' } : null })} />
+            <Stack key={d} direction="row" alignItems="center" gap={{ xs: 0.75, sm: 1.5 }} sx={{ py: 0.75 }}>
+              <Typography sx={{ width: { xs: 36, sm: 48 }, flexShrink: 0 }}>{t(`day.${d}`)}</Typography>
+              <Switch sx={{ flexShrink: 0 }} checked={!!v} onChange={e => set('timings', { ...f.timings, [d]: e.target.checked ? { open: '06:00', close: '20:00' } : null })} />
               {v ? (
                 <>
-                  <TextField size="small" type="time" value={v.open} onChange={e => set('timings', { ...f.timings, [d]: { ...v, open: e.target.value } })} sx={{ maxWidth: 140 }} />
+                  <TextField size="small" type="time" value={v.open} onChange={e => set('timings', { ...f.timings, [d]: { ...v, open: e.target.value } })} sx={{ flex: 1, minWidth: 0, maxWidth: 140 }} inputProps={{ style: { paddingLeft: 8, paddingRight: 4 } }} />
                   <Typography>–</Typography>
-                  <TextField size="small" type="time" value={v.close} onChange={e => set('timings', { ...f.timings, [d]: { ...v, close: e.target.value } })} sx={{ maxWidth: 140 }} />
+                  <TextField size="small" type="time" value={v.close} onChange={e => set('timings', { ...f.timings, [d]: { ...v, close: e.target.value } })} sx={{ flex: 1, minWidth: 0, maxWidth: 140 }} inputProps={{ style: { paddingLeft: 8, paddingRight: 4 } }} />
                 </>
               ) : <Typography color="text.secondary">{t('wiz.closed')}</Typography>}
             </Stack>
@@ -283,30 +283,32 @@ export default function DsoWizard() {
 
   return (
     <>
-      <TopBar back="/dso" title={existing ? f.name || t('dso.add') : t('dso.add')} actions={existing ? <StatusChip status={f.status} /> : undefined} />
+      <TopBar back="/dso" title={existing ? f.name || t('dso.add') : t('dso.add')} actions={existing ? <Box sx={{ display: { xs: 'none', sm: 'block' } }}><StatusChip status={f.status} /></Box> : undefined} />
       <LinearProgress variant="determinate" value={((step + 1) / steps.length) * 100} sx={{ height: 4 }} />
-      <Container maxWidth="md" sx={{ py: 2, pb: 14 }}>
+      <Container maxWidth="md" sx={{ py: 2, pb: 14, px: { xs: 1.5, sm: 3 } }}>
         <Stack direction="row" gap={0.75} sx={{ overflowX: 'auto', pb: 1.5 }}>
           {steps.map((s, i) => (
-            <Chip key={s} label={`${i + 1}. ${s}`} onClick={() => setStep(i)} color={i === step ? 'primary' : 'default'} variant={i === step ? 'filled' : 'outlined'} sx={{ flexShrink: 0 }} />
+            <Chip key={s} label={`${i + 1}. ${s}`} onClick={() => setStep(i)} ref={(el: HTMLDivElement | null) => { if (el && i === step) el.scrollIntoView({ block: 'nearest', inline: 'center' }) }} color={i === step ? 'primary' : 'default'} variant={i === step ? 'filled' : 'outlined'} sx={{ flexShrink: 0 }} />
           ))}
         </Stack>
         {lastReturned && <Alert severity="warning" icon={<Icon name="comment" />} sx={{ mb: 2 }}><b>{t('dso.stateComment')}:</b> {lastReturned.comment}</Alert>}
         {msg && <Alert severity={msg === t('wiz.saved') ? 'success' : 'warning'} onClose={() => setMsg('')} sx={{ mb: 2 }}>{msg}</Alert>}
-        <Typography variant="h3" sx={{ mb: 2 }}>{steps[step]}</Typography>
+        <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>
+          <Typography variant="h3" sx={{ flex: 1 }}>{steps[step]} <Typography component="span" variant="body2" color="text.secondary">· {step + 1}/{steps.length}</Typography></Typography>
+          {existing && <Box sx={{ display: { xs: 'block', sm: 'none' } }}><StatusChip status={f.status} /></Box>}
+        </Stack>
         {body[step]}
       </Container>
 
-      <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: 0, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider', p: 1.5, zIndex: 1200 }}>
-        <Container maxWidth="md" sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="text" disabled={step === 0} onClick={() => setStep(step - 1)} startIcon={<Icon name="arrow_back" />}>{t('common.back')}</Button>
-          <Box sx={{ flex: 1 }} />
-          <Button variant="outlined" onClick={() => save(false)} startIcon={<Icon name="save" />}>{t('common.saveDraft')}</Button>
+      <BottomBar>
+        <Stack direction="row" gap={1} alignItems="center">
+          <IconButton disabled={step === 0} onClick={() => setStep(step - 1)} aria-label={t('common.back')} sx={{ border: '1px solid', borderColor: 'divider', flexShrink: 0 }}><Icon name="arrow_back" /></IconButton>
+          <Button variant="outlined" onClick={() => save(false)} startIcon={<Icon name="save" />} sx={{ flex: 1, px: 1 }}>{t('common.saveDraft')}</Button>
           {step < steps.length - 1
-            ? <Button variant="contained" onClick={() => setStep(step + 1)} endIcon={<Icon name="arrow_forward" />}>{t('common.next')}</Button>
-            : <Button variant="contained" color="secondary" onClick={() => save(true)} endIcon={<Icon name="send" />}>{t('common.submit')}</Button>}
-        </Container>
-      </Box>
+            ? <Button variant="contained" onClick={() => setStep(step + 1)} endIcon={<Icon name="arrow_forward" />} sx={{ flex: 1, px: 1 }}>{t('common.next')}</Button>
+            : <Button variant="contained" color="secondary" onClick={() => save(true)} endIcon={<Icon name="send" />} sx={{ flex: 1.4, px: 1 }}>{t('common.submit')}</Button>}
+        </Stack>
+      </BottomBar>
 
       <CameraCapture open={cam} onClose={() => setCam(false)} onSave={addPhoto} facilityName={f.name} officerName={user.fullName} officerId={user.id}
         taluka={f.taluka} ward={f.ward} pin={f.lat != null ? { lat: f.lat, lng: f.lng! } : null}

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Alert, Box, Button, Card, CardContent, Chip, Container, Stack, Tab, Tabs, TextField, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Icon, TopBar, ScoreBars, ScoreBadge, StatusChip, TagChips, Stars, useCurrentUser, Section } from '../components/ui'
+import { Icon, TopBar, ScoreBars, ScoreBadge, StatusChip, TagChips, Stars, useCurrentUser, Section, BottomBar } from '../components/ui'
 import { MapView } from '../components/MapView'
 import { useDb, reviewFacility, avgRating } from '../data/store'
 import { computeScore } from '../lib/score'
@@ -39,8 +39,9 @@ export default function StateReview() {
 
   return (
     <>
-      <TopBar back="/state" title={f.name} actions={<StatusChip status={f.status} />} />
-      <Container maxWidth="lg" sx={{ py: 2, pb: f.status === 'submitted' ? 22 : 6 }}>
+      <TopBar back="/state" title={f.name} actions={<Box sx={{ display: { xs: 'none', sm: 'block' } }}><StatusChip status={f.status} /></Box>} />
+      <Container maxWidth="lg" sx={{ py: 2, pb: f.status === 'submitted' ? 24 : 6, px: { xs: 1.5, sm: 3 } }}>
+        <Box sx={{ display: { xs: 'flex', sm: 'none' }, mb: 1 }}><StatusChip status={f.status} /></Box>
         <PhotoStrip f={f} flags />
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
           <Tab icon={<Icon name="info" />} iconPosition="start" label={t('common.details')} />
@@ -62,7 +63,7 @@ export default function StateReview() {
                 )}
               </Section>
               <Section title={t('common.map')} icon="map">
-                <Box sx={{ height: 260, borderRadius: 4, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ height: 260, borderRadius: '16px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
                   <MapView pins={[{ id: 'pin', lat: f.lat!, lng: f.lng!, color: brand.orange, icon: typeIcon(f.type), label: f.name }]} center={[f.lat!, f.lng!]}
                     extraPins={f.photos.filter(p => p.lat != null).map(p => ({ id: p.id, lat: p.lat!, lng: p.lng!, color: p.flagFar ? '#C62828' : '#607D8B', icon: 'photo_camera', label: p.caption }))} />
                 </Box>
@@ -116,17 +117,17 @@ export default function StateReview() {
       </Container>
 
       {f.status === 'submitted' && (
-        <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: 0, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider', p: 1.5, zIndex: 1200 }}>
-          <Container maxWidth="lg">
+        <BottomBar>
+          <Box>
             {err && <Alert severity="error" sx={{ mb: 1 }} onClose={() => setErr('')}>{err}</Alert>}
             <TextField size="small" label={t('state.commentReq')} value={comment} onChange={e => setComment(e.target.value)} sx={{ mb: 1 }} />
-            <Stack direction="row" gap={1} justifyContent="flex-end">
-              <Button color="error" variant="text" startIcon={<Icon name="block" />} onClick={() => act('rejected')}>{t('state.reject')}</Button>
-              <Button color="warning" variant="outlined" startIcon={<Icon name="undo" />} onClick={() => act('returned')}>{t('state.return')}</Button>
-              <Button color="success" variant="contained" startIcon={<Icon name="verified" />} onClick={() => act('approved')}>{t('state.approve')}</Button>
+            <Stack direction="row" gap={1}>
+              <Button color="error" variant="text" startIcon={<Icon name="block" />} onClick={() => act('rejected')} sx={{ flex: 1, px: 1 }}>{t('state.reject')}</Button>
+              <Button color="warning" variant="outlined" startIcon={<Icon name="undo" />} onClick={() => act('returned')} sx={{ flex: 1, px: 1 }}>{t('state.return')}</Button>
+              <Button color="success" variant="contained" startIcon={<Icon name="verified" />} onClick={() => act('approved')} sx={{ flex: 1.3, px: 1 }}>{t('state.approve')}</Button>
             </Stack>
-          </Container>
-        </Box>
+          </Box>
+        </BottomBar>
       )}
     </>
   )

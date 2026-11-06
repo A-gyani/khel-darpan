@@ -14,7 +14,7 @@
     "tabEmail": "Email", "tabOtp": "Mobile OTP", "public": "Continue as citizen", "publicHint": "No login needed to find facilities, check in or report a problem",
     "error": "Wrong email or password", "otpError": "Wrong OTP", "noUser": "This mobile number is not registered",
     "demoOtp": "Demo mode: OTP is {{otp}}", "photoSpace": "Photo space", "photoHint": "Add a facility photo here",
-    "demoUsers": "Demo logins are listed in the README"
+    "demoUsers": "Demo logins are listed in the README", "backToSearch": "Search facilities"
   },
   "role": { "public": "Citizen", "district_officer": "District Sports Officer", "state_officer": "State officer" },
   "status": { "draft": "Draft", "submitted": "Submitted", "approved": "Approved", "returned": "Returned", "rejected": "Rejected" },
@@ -60,7 +60,7 @@
     "searchPh": "Search facility, sport or area", "sport": "Sport", "type": "Type", "taluka": "Taluka", "fee": "Fee",
     "womenFriendly": "Women-friendly", "accessible": "Accessible", "openNow": "Open now", "results": "{{count}} facilities",
     "nearest": "Nearest first", "allowLocation": "Allow location to sort by distance", "noResults": "No facility matches these filters",
-    "officerLogin": "Officer login", "rating": "Citizen rating", "ratings": "{{count}} ratings", "noRatings": "No ratings yet",
+    "officerLogin": "Officer login", "officialLogin": "Official login", "officials": "Officials", "myDashboard": "My dashboard", "rating": "Citizen rating", "ratings": "{{count}} ratings", "noRatings": "No ratings yet",
     "timings": "Timings", "closed": "Closed", "sports": "Sports", "amenities": "Amenities", "booking": "Booking", "capacity": "Capacity",
     "coach": "Coach available", "womenSlots": "Women-only slots", "para": "Para-sports support", "schools": "Open to schools",
     "underReview": "Updated details are under review"

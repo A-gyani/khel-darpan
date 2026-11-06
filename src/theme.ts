@@ -1,4 +1,4 @@
-import { createTheme } from '@mui/material/styles'
+import { createTheme, responsiveFontSizes } from '@mui/material/styles'
 
 // Colours taken from the Sports Authority of Gujarat logo (blue, orange, green figures).
 export const brand = {
@@ -9,7 +9,7 @@ export const brand = {
 }
 
 // Material Design 3 style: tonal surfaces, rounded shapes, pill buttons.
-export const theme = createTheme({
+export const theme = responsiveFontSizes(createTheme({
   palette: {
     primary: { main: brand.blue, dark: brand.blueDark, contrastText: '#fff' },
     secondary: { main: brand.orange, contrastText: '#fff' },
@@ -46,4 +46,4 @@ export const theme = createTheme({
     MuiTab: { styleOverrides: { root: { textTransform: 'none', fontWeight: 500, minHeight: 48 } } },
     MuiFab: { styleOverrides: { root: { borderRadius: 16, textTransform: 'none' } } },
   },
-})
+}), { factor: 2.2 })

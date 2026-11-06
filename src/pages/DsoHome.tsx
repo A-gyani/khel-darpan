@@ -28,10 +28,10 @@ export default function DsoHome() {
   const openG = grievances.filter(g => g.status === 'open')
 
   const stat = (s: Status, icon: string) => (
-    <Card sx={{ flex: '1 1 130px' }}>
-      <CardContent sx={{ py: 1.5 }}>
+    <Card>
+      <CardContent sx={{ py: 1.25, px: 1.5, '&:last-child': { pb: 1.25 } }}>
         <Stack direction="row" alignItems="center" gap={1}><Icon name={icon} color="#1B6FB8" /><Typography variant="body2" color="text.secondary">{t(`status.${s}`)}</Typography></Stack>
-        <Typography variant="h2" sx={{ mt: 0.5 }}>{count(s)}</Typography>
+        <Typography sx={{ mt: 0.25, fontSize: { xs: 26, sm: 32 }, fontWeight: 500, lineHeight: 1.1 }}>{count(s)}</Typography>
       </CardContent>
     </Card>
   )
@@ -39,10 +39,10 @@ export default function DsoHome() {
   return (
     <>
       <TopBar title={`${t('dso.home')} · Ahmedabad`} />
-      <Container maxWidth="lg" sx={{ py: 2, pb: 12 }}>
-        <Stack direction="row" gap={1.5} flexWrap="wrap" sx={{ mb: 2 }}>
+      <Container maxWidth="lg" sx={{ py: 2, pb: 12, px: { xs: 1.5, sm: 3 } }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' }, gap: 1.25, mb: 2 }}>
           {stat('draft', 'edit_note')}{stat('submitted', 'schedule_send')}{stat('returned', 'undo')}{stat('approved', 'verified')}
-        </Stack>
+        </Box>
 
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ mb: 2 }}>
           <Tab icon={<Icon name="assignment_return" />} iconPosition="start" label={`${t('status.returned')} (${returned.length})`} />
@@ -69,7 +69,7 @@ export default function DsoHome() {
 
         {tab === 1 && (
           <Stack direction={{ xs: 'column', md: 'row' }} gap={2}>
-            <Box sx={{ flex: 1, height: { xs: 280, md: 560 }, borderRadius: 4, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ flex: 1, height: { xs: 280, md: 560 }, borderRadius: '16px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
               <MapView pins={mine.filter(f => f.lat != null).map(f => ({ id: f.id, lat: f.lat!, lng: f.lng!, color: BAND_COLORS[computeScore(f, db.checkins).band], icon: typeIcon(f.type), label: f.name }))}
                 onPinClick={id => nav(`/dso/edit/${id}`)} />
             </Box>
@@ -114,7 +114,7 @@ export default function DsoHome() {
                         : <Chip size="small" color="success" label={t('dso.resolved')} />}
                     </Stack>
                     <Typography variant="body2" sx={{ mt: 1 }}>{g.description}</Typography>
-                    {g.photo && <Box component="img" src={g.photo} alt="" sx={{ mt: 1, maxWidth: 200, borderRadius: 2 }} />}
+                    {g.photo && <Box component="img" src={g.photo} alt="" sx={{ mt: 1, maxWidth: 200, borderRadius: '10px' }} />}
                     {g.status === 'resolved' && g.resolutionNote && <Typography variant="body2" color="success.main" sx={{ mt: 1 }}><Icon name="check_circle" size={18} /> {g.resolutionNote}</Typography>}
                     {g.status === 'open' && <Button size="small" sx={{ mt: 1 }} variant="outlined" startIcon={<Icon name="task_alt" />} onClick={() => { setResolving(g.id); setNote('') }}>{t('dso.markResolved')}</Button>}
                   </CardContent>
@@ -125,7 +125,7 @@ export default function DsoHome() {
         )}
       </Container>
 
-      <Fab variant="extended" color="secondary" onClick={() => nav('/dso/edit/new')} sx={{ position: 'fixed', right: 20, bottom: 20, height: 56, px: 3 }}>
+      <Fab variant="extended" color="secondary" onClick={() => nav('/dso/edit/new')} sx={{ position: 'fixed', right: 16, bottom: 'calc(16px + env(safe-area-inset-bottom))', height: 56, px: 3 }}>
         <Icon name="add_location_alt" style={{ marginRight: 8 }} />{t('dso.add')}
       </Fab>
 

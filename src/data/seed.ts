@@ -140,7 +140,7 @@ export function buildSeed(): DB {
       feeAmount: sp.own === 'private_ppp' ? 400 : sp.own === 'state_sag' ? 300 : null,
       feeUnit: sp.own === 'private_ppp' ? 'per_hour' : 'per_month',
       bookingName: 'Facility in-charge', bookingPhone: i % 5 === 3 ? '' : `07926${String(100000 + i * 137).slice(0, 6)}`,
-      capacity: sp.cap, surface: sp.type === 'open_ground' ? 'grass' : sp.type === 'court' ? 'synthetic' : 'wooden/indoor',
+      capacity: sp.cap, surface: sp.type === 'open_ground' ? 'natural_grass' : sp.type === 'court' ? 'synthetic_court' : 'wooden',
       coachAvailable: sp.own === 'state_sag' || sp.own === 'district', coachCount: sp.own === 'state_sag' ? int(2, 6) : sp.own === 'district' ? 1 : null,
       womenOnlySlots: sp.own === 'state_sag' || i % 3 === 0, paraSports: sp.own === 'state_sag', openToSchools: sp.own !== 'private_ppp',
       condition: cond, lastMaintenance: sp.cond <= 2 ? '2023-03-15' : '2025-08-10', yearBuilt: 1995 + int(0, 28),

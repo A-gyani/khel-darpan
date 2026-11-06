@@ -11,6 +11,7 @@ import type { Status } from '../lib/types'
 import { typeIcon } from './PublicMap'
 import { ReturnNote } from '../components/review'
 import { fixStep } from './DsoFacilityView'
+import { ExportButton } from '../components/ExportButton'
 
 export const daysSince = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 864e5))
 
@@ -72,9 +73,14 @@ export default function DsoHome() {
 
         {tab === 1 && (
           <Stack gap={1.5}>
-            <Button variant={showMap ? 'contained' : 'outlined'} startIcon={<Icon name={showMap ? 'close' : 'map'} />} onClick={() => setShowMap(!showMap)} sx={{ alignSelf: 'flex-start' }}>
-              {showMap ? t('dso.hideMap') : t('dso.showMap')}
-            </Button>
+            <Stack direction="row" gap={1} alignItems="center">
+              <Button variant={showMap ? 'contained' : 'outlined'} startIcon={<Icon name={showMap ? 'close' : 'map'} />} onClick={() => setShowMap(!showMap)}>
+                {showMap ? t('dso.hideMap') : t('dso.showMap')}
+              </Button>
+              <Box sx={{ flex: 1 }} />
+              <ExportButton facilities={[...mine].sort((a, b) => a.name.localeCompare(b.name))} db={db} fileTag={districtOf(user.district || '')?.en || 'district'}
+                filters={[['District', districtOf(user.district || '')?.en || ''], ['Status', 'All (draft, submitted, returned, approved, rejected)']]} />
+            </Stack>
             {showMap && <Box sx={{ height: { xs: 300, md: 420 }, flexShrink: 0, borderRadius: '16px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
               <MapView pins={mine.filter(f => f.lat != null).map(f => ({ id: f.id, lat: f.lat!, lng: f.lng!, color: BAND_COLORS[computeScore(f, db.checkins).band], icon: typeIcon(f.type), label: f.name }))}
                 onPinClick={id => nav(`/dso/f/${id}`)} />

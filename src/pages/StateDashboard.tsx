@@ -1,4 +1,4 @@
-// State officer home. Built for all 34 districts: one district dropdown, short filtered lists, no decorative charts.
+// State officer home. Built for all 34 districts: one district dropdown, short filtered lists, three charts in their own tab.
 import { useMemo, useState } from 'react'
 import { Alert, Box, Button, Card, CardActionArea, Chip, Container, FormControl, InputAdornment, InputLabel, MenuItem, Select, Stack, Tab, Tabs, TextField, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
@@ -11,6 +11,8 @@ import { CWG_SPORTS, ESCALATE_AFTER_DAYS, FACILITY_TYPES, GRIEVANCE_CATEGORIES, 
 import type { DB, Facility } from '../lib/types'
 import { brand } from '../theme'
 import { daysSince } from './DsoHome'
+import { StateCharts } from '../components/stateCharts'
+import { ExportButton } from '../components/ExportButton'
 
 type Scored = { f: Facility; r: ScoreResult }
 const PAGE = 20
@@ -205,6 +207,7 @@ export default function StateDashboard() {
           <Tab label={dist ? t('sd.tabTalukas') : t('sd.tabDistricts')} />
           <Tab label={`${t('sd.tabComplaints')} (${openG.length})`} />
           <Tab label="CWG 2030" />
+          <Tab label={t('ch.tab')} />
         </Tabs>
 
         {tab === 0 && (
@@ -237,7 +240,19 @@ export default function StateDashboard() {
               <Pick label={t('public.sport')} value={fSport} width={140} onChange={v => { setFSport(v); setFN(PAGE) }} options={[['', t('common.all')], ...SPORTS.map(s => [s, t(`sport.${s}`)] as [string, string])]} />
               <Pick label={t('public.type')} value={fType} width={150} onChange={v => { setFType(v); setFN(PAGE) }} options={[['', t('common.all')], ...FACILITY_TYPES.map(s => [s, t(`type.${s}`)] as [string, string])]} />
             </FilterRow>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{t('sd.found', { count: fac.length })}</Typography>
+            <Stack direction="row" alignItems="center" sx={{ mb: 1 }} gap={1}>
+              <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>{t('sd.found', { count: fac.length })}</Typography>
+              <ExportButton facilities={fac.map(x => x.f)} db={db} fileTag={dist ? districtOf(dist)?.en || dist : 'Gujarat'} filters={([
+                [t('public.district', { lng: 'en' }), dist ? districtOf(dist)?.en || dist : 'All Gujarat'],
+                ['Status', 'Approved'],
+                ...(fSearch ? [['Name contains', fSearch]] : []),
+                ...(fNeed ? [[t('sd.needs', { lng: 'en' }), fNeed === 'few_scans' ? t('sd.fewScans', { lng: 'en' }) : fNeed === 'stale' ? t('sd.stale', { lng: 'en' }) : t(`tag.${fNeed}`, { lng: 'en' })]] : []),
+                ...(fBand ? [[t('sd.condition', { lng: 'en' }), t(`sd.band.${fBand}`, { lng: 'en' })]] : []),
+                ...(fTal ? [[t('public.taluka', { lng: 'en' }), TALUKAS.find(x => x.id === fTal)?.en || fTal]] : []),
+                ...(fSport ? [[t('public.sport', { lng: 'en' }), t(`sport.${fSport}`, { lng: 'en' })]] : []),
+                ...(fType ? [[t('public.type', { lng: 'en' }), t(`type.${fType}`, { lng: 'en' })]] : []),
+              ] as [string, string][])} />
+            </Stack>
             <Stack spacing={1}>
               {fac.slice(0, fN).map(({ f, r }) => (
                 <Row key={f.id} title={f.name} onClick={() => nav(`/state/review/${f.id}`)} sub={`${where(f)} · ${t(`type.${f.type}`)}`}
@@ -334,6 +349,8 @@ export default function StateDashboard() {
             </Stack>
           </>
         )}
+
+        {tab === 5 && <StateCharts db={db} dist={dist} />}
 
         <Box sx={{ mt: 4, textAlign: 'right' }}>
           <Button size="small" color="inherit" startIcon={<Icon name="restart_alt" />} onClick={() => { if (confirm(REMOTE ? t('sd.loadDemoConfirm') : t('common.resetDemo') + '?')) resetDemo() }}>{REMOTE ? t('sd.loadDemo') : t('common.resetDemo')}</Button>

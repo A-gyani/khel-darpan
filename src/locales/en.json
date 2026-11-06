@@ -610,5 +610,28 @@
     },
     "loadDemo": "Load demo data into the database",
     "loadDemoConfirm": "This deletes everything in the database and loads the demo facilities, check-ins and complaints. Continue?"
+  },
+  "ch": {
+    "tab": "Charts",
+    "bySport": "Approved facilities by sport",
+    "bySportNote": "A facility with several sports is counted under each.",
+    "bandsDistrict": "Health Score bands by district",
+    "bandsTaluka": "Health Score bands by taluka",
+    "districtsMissing_one": "{{count}} district with no approved facility is not shown.",
+    "districtsMissing_other": "{{count}} districts with no approved facility are not shown.",
+    "talukasMissing_one": "{{count}} taluka with no approved facility is not shown.",
+    "talukasMissing_other": "{{count}} talukas with no approved facility are not shown.",
+    "checkins": "People checking in by QR: women and men",
+    "checkinsNote": "Group sizes added up. Other / not said are not shown.",
+    "period": "Period",
+    "w4": "Last 4 weeks",
+    "w12": "Last 12 weeks",
+    "m12": "Last 12 months",
+    "women": "Women",
+    "men": "Men"
+  },
+  "ex": {
+    "excel": "Excel",
+    "failed": "Could not create the Excel file."
   }
 }

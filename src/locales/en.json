@@ -1,0 +1,125 @@
+{
+  "app": { "name": "Khel Suvidha Gujarat", "tagline": "Every sports facility, mapped and cared for", "demo": "Demo data", "dept": "Sports Authority of Gujarat" },
+  "common": {
+    "back": "Back", "next": "Next", "save": "Save", "saveDraft": "Save draft", "submit": "Submit for review", "cancel": "Cancel",
+    "close": "Close", "search": "Search", "filters": "Filters", "clear": "Clear", "apply": "Apply", "all": "All", "yes": "Yes", "no": "No",
+    "logout": "Log out", "language": "ગુજરાતી", "loading": "Loading…", "none": "None", "view": "View", "edit": "Edit", "done": "Done",
+    "map": "Map", "list": "List", "km": "km", "m": "m", "optional": "optional", "required": "required", "photos": "Photos",
+    "details": "Details", "history": "History", "call": "Call", "directions": "Get directions", "noData": "No data", "print": "Print",
+    "days": "days", "resetDemo": "Reset demo data", "of": "of"
+  },
+  "login": {
+    "title": "Sign in", "subtitle": "For District Sports Officers and State officers", "email": "Email", "password": "Password",
+    "mobile": "Mobile number", "sendOtp": "Send OTP", "otp": "Enter 6-digit OTP", "verify": "Verify and sign in",
+    "tabEmail": "Email", "tabOtp": "Mobile OTP", "public": "Continue as citizen", "publicHint": "No login needed to find facilities, check in or report a problem",
+    "error": "Wrong email or password", "otpError": "Wrong OTP", "noUser": "This mobile number is not registered",
+    "demoOtp": "Demo mode: OTP is {{otp}}", "photoSpace": "Photo space", "photoHint": "Add a facility photo here",
+    "demoUsers": "Demo logins are listed in the README"
+  },
+  "role": { "public": "Citizen", "district_officer": "District Sports Officer", "state_officer": "State officer" },
+  "status": { "draft": "Draft", "submitted": "Submitted", "approved": "Approved", "returned": "Returned", "rejected": "Rejected" },
+  "type": {
+    "stadium": "Stadium", "sports_complex": "Sports complex", "indoor_hall": "Indoor hall", "open_ground": "Open ground",
+    "swimming_pool": "Swimming pool", "court": "Court", "gym": "Gym", "akhada": "Akhada", "school_ground": "School ground", "other": "Other"
+  },
+  "own": { "state_sag": "State / SAG", "district": "District", "municipal": "Municipal", "school_college": "School / college", "private_ppp": "Private / PPP", "other": "Other" },
+  "sport": {
+    "athletics": "Athletics", "football": "Football", "cricket": "Cricket", "hockey": "Hockey", "kabaddi": "Kabaddi", "kho_kho": "Kho-kho",
+    "volleyball": "Volleyball", "basketball": "Basketball", "badminton": "Badminton", "table_tennis": "Table tennis", "tennis": "Tennis",
+    "swimming": "Swimming", "wrestling": "Wrestling", "boxing": "Boxing", "judo": "Judo", "archery": "Archery", "shooting": "Shooting",
+    "weightlifting": "Weightlifting", "yoga": "Yoga", "chess": "Chess", "other": "Other"
+  },
+  "amenity": {
+    "floodlights": "Floodlights", "changing_room_men": "Changing room (men)", "changing_room_women": "Changing room (women)",
+    "toilets_men": "Toilets (men)", "toilets_women": "Toilets (women)", "drinking_water": "Drinking water", "first_aid": "First aid",
+    "seating": "Seating", "parking": "Parking", "equipment_available": "Equipment available", "ramp_access": "Ramp access",
+    "accessible_toilet": "Accessible toilet", "hostel": "Hostel"
+  },
+  "cond": {
+    "surface": "Playing surface", "lighting": "Lighting", "toilets": "Toilets", "changing_rooms": "Changing rooms", "water": "Drinking water",
+    "seating": "Seating", "safety_equipment": "Safety & first aid", "overall_cleanliness": "Overall cleanliness"
+  },
+  "condHint": {
+    "surface": "1 = broken/uneven, 5 = even, marked, match-ready",
+    "lighting": "1 = no lights, 5 = all lights working for evening play",
+    "toilets": "1 = unusable, 5 = clean, water, locks working",
+    "changing_rooms": "1 = none/unusable, 5 = clean with lockers",
+    "water": "1 = none, 5 = clean drinking water always available",
+    "seating": "1 = none, 5 = enough safe seating",
+    "safety_equipment": "1 = nothing, 5 = first-aid kit, fire safety, trained person",
+    "overall_cleanliness": "1 = garbage everywhere, 5 = clean throughout"
+  },
+  "caption": { "entrance": "Entrance", "playing_area": "Playing area", "toilets": "Toilets", "changing_room": "Changing room", "lighting": "Lighting", "damage": "Damage", "other": "Other" },
+  "day": { "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun" },
+  "fee": { "free": "Free", "paid": "Paid", "subsidised": "Subsidised", "per_hour": "per hour", "per_month": "per month", "per_year": "per year" },
+  "cwg": { "none": "Not a CWG site", "venue": "CWG 2030 venue", "training": "CWG 2030 training venue" },
+  "tag": { "underused": "Underused", "repair_priority": "Repair priority", "not_women_friendly": "Not women-friendly" },
+  "pillar": { "condition": "Condition", "utilisation": "Use", "accessibility": "Access", "inclusivity": "Inclusivity", "performance": "Performance", "qr": "from QR check-ins", "estimate": "from DSO estimate" },
+  "band": { "green": "Good (75+)", "amber": "Fair (50–74)", "red": "Poor (below 50)", "grey": "Not enough data" },
+  "public": {
+    "searchPh": "Search facility, sport or area", "sport": "Sport", "type": "Type", "taluka": "Taluka", "fee": "Fee",
+    "womenFriendly": "Women-friendly", "accessible": "Accessible", "openNow": "Open now", "results": "{{count}} facilities",
+    "nearest": "Nearest first", "allowLocation": "Allow location to sort by distance", "noResults": "No facility matches these filters",
+    "officerLogin": "Officer login", "rating": "Citizen rating", "ratings": "{{count}} ratings", "noRatings": "No ratings yet",
+    "timings": "Timings", "closed": "Closed", "sports": "Sports", "amenities": "Amenities", "booking": "Booking", "capacity": "Capacity",
+    "coach": "Coach available", "womenSlots": "Women-only slots", "para": "Para-sports support", "schools": "Open to schools",
+    "underReview": "Updated details are under review"
+  },
+  "qr": {
+    "welcome": "Welcome to", "checkIn": "Check in", "checkInSub": "Tell us you are playing here today",
+    "report": "Report a problem", "reportSub": "Broken, closed, unsafe or wrong information",
+    "rate": "Rate this facility", "rateSub": "Cleanliness, timing, staff",
+    "sport": "Which sport?", "role": "You are a", "gender": "Gender", "age": "Age group", "group": "How many people with you (including you)?",
+    "roles": { "player": "Player", "coach": "Coach", "parent": "Parent", "visitor": "Visitor" },
+    "genders": { "female": "Female", "male": "Male", "other": "Other", "na": "Prefer not to say" },
+    "ages": { "u14": "Under 14", "14_18": "14–18", "19_25": "19–25", "26_40": "26–40", "40plus": "Over 40", "na": "Prefer not to say" },
+    "thanks": "Thank you!", "checkedIn": "You are checked in. Enjoy your game.", "limit": "This phone has already checked in twice here today.",
+    "category": "What is the problem?", "describe": "Describe the problem", "addPhoto": "Add photo (optional)",
+    "sent": "Complaint registered", "refNo": "Your reference number", "refHint": "The District Sports Officer will act on it. If it is not resolved in 7 days, it goes to the State office.",
+    "overall": "Overall", "cleanliness": "Cleanliness", "onTime": "Open on time", "staff": "Staff behaviour", "comment": "Comment (optional)",
+    "rated": "Thanks for rating", "openPage": "View facility details", "poster": "QR poster", "scanToCheckIn": "Scan to check in, rate or report a problem",
+    "sendReport": "Send complaint", "sendRating": "Send rating"
+  },
+  "gcat": {
+    "closed_when_should_be_open": "Closed when it should be open", "damaged": "Damaged", "unsafe": "Unsafe", "wrong_info": "Wrong information",
+    "fee_issue": "Fee issue", "staff": "Staff behaviour", "other": "Other"
+  },
+  "dso": {
+    "home": "My district", "add": "Add facility", "returnedList": "Returned – needs your action", "myFacilities": "My facilities",
+    "grievances": "Complaints from citizens", "open": "Open", "resolved": "Resolved", "overdue": "Overdue", "markResolved": "Mark resolved",
+    "resolutionNote": "What was done?", "noReturned": "Nothing returned. Good work.", "stateComment": "State officer's comment",
+    "poster": "Download QR poster", "daysOpen": "{{count}} days open"
+  },
+  "wiz": {
+    "steps": ["Basic details", "Photos", "Location", "Sports & amenities", "Timings & fees", "Condition", "Review & submit"],
+    "name": "Facility name", "type": "Facility type", "ownership": "Owned by", "taluka": "Taluka", "ward": "Village / ward", "address": "Address",
+    "cwg": "Commonwealth Games 2030", "yearBuilt": "Year built", "capacity": "Capacity (people at one time)", "surface": "Surface type",
+    "photosHint": "Take at least 3 photos at the site: entrance, playing area, and toilets or changing room.",
+    "needPhotos": "Still needed: {{list}}", "takePhoto": "Take photo", "faces": "Please avoid photographing people's faces.",
+    "locationHint": "The pin is set from your first photo's GPS. Drag it if it is not exactly on the facility.",
+    "gpsOriginal": "Original GPS", "useMyLocation": "Use my current location", "pinMoved": "Pin moved {{m}} m from original GPS",
+    "sports": "Sports played here", "amenities": "Amenities", "coach": "Coach available", "coachCount": "Number of coaches",
+    "womenSlots": "Women-only time slots", "para": "Para-sports support", "schools": "Open to schools",
+    "timings": "Opening hours", "closed": "Closed", "fee": "Fee", "feeAmount": "Amount (₹)", "feeUnit": "Per", "bookingName": "Booking contact name",
+    "bookingPhone": "Booking phone", "condition": "Rate each item from 1 (very poor) to 5 (very good)", "lastMaintenance": "Last maintenance date",
+    "weeklyUsers": "Approx. users per week (your estimate)", "athletes": "Athletes trained last year", "scorePreview": "Facility Health Score (preview)",
+    "submitted": "Submitted for review", "saved": "Draft saved", "missing": "Please complete: {{list}}"
+  },
+  "cam": {
+    "title": "Take photo", "caption": "What is this photo of?", "gps": "GPS", "accuracy": "accuracy ±{{m}} m", "poorGps": "Weak GPS. Move to open sky and retry.",
+    "noGps": "Location not available. Allow location access.", "noCamera": "Camera not available. Allow camera access and use HTTPS.",
+    "capture": "Capture", "retake": "Retake", "use": "Use photo", "farFlag": "{{m}} m from pin", "dupFlag": "Duplicate photo", "gpsFlag": "Weak GPS"
+  },
+  "state": {
+    "dashboard": "Dashboard", "review": "Review queue", "grievances": "Complaints", "total": "Facilities mapped", "pending": "Pending review",
+    "overdueG": "Overdue complaints", "checkinsWeek": "Check-ins this week", "people": "{{count}} people", "toReview": "To review (oldest first)",
+    "approve": "Approve", "return": "Return", "reject": "Reject", "commentReq": "Comment (required for return or reject)",
+    "flags": "Flags", "noFlags": "No flags", "bySport": "Facilities by sport", "byType": "Facilities by type", "bands": "Health Score bands",
+    "checkinsTrend": "QR check-ins (last 4 weeks)", "female": "Female", "male": "Male", "otherNa": "Other / not said",
+    "gByCat": "Complaints by category", "cwgReady": "CWG 2030 sport readiness", "cwgNote": "Provisional sport list – confirm with official CWG 2030 programme",
+    "facilities": "Facilities", "good": "Good", "poor": "Needs work", "gap": "Gap", "repairList": "Repair priority (high use, poor condition)",
+    "underusedList": "Underused (good condition, low use)", "progress": "Progress by taluka", "mapped": "Mapped", "approved": "Approved",
+    "returnRate": "Returned", "onTime": "Complaints closed in 7 days", "lastActivity": "Last activity", "allClear": "Nothing in the queue",
+    "submittedOn": "Submitted", "score": "Score", "use": "Use", "condition": "Condition", "action": "Action", "by": "by", "rating": "Citizen rating"
+  }
+}

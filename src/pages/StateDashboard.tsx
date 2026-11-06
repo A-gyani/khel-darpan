@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts'
 import { Icon, TopBar, ScoreBadge, StatusChip, Section, TagChips } from '../components/ui'
-import { MapView } from '../components/MapView'
+import { CoverageView, CwgReadiness } from '../components/insights'
 import { useDb, resetDemo } from '../data/store'
 import { computeScore, BAND_COLORS } from '../lib/score'
 import { CWG_SPORTS, ESCALATE_AFTER_DAYS, FACILITY_TYPES, GRIEVANCE_CATEGORIES, DISTRICTS, talukasOf, districtOf, placeName } from '../lib/constants'
@@ -91,12 +91,6 @@ export default function StateDashboard() {
     return { name: t(`gcat.${c}`), open: gs.filter(g => g.status === 'open' && daysSince(g.at) <= ESCALATE_AFTER_DAYS).length, overdue: gs.filter(g => g.status === 'open' && daysSince(g.at) > ESCALATE_AFTER_DAYS).length, resolved: gs.filter(g => g.status === 'resolved').length }
   }).filter(x => x.open + x.overdue + x.resolved)
 
-  // CWG readiness
-  const cwg = CWG_SPORTS.map(s => {
-    const fs = approved.filter(x => x.f.sports.includes(s))
-    const good = fs.filter(x => (x.r.pillars[0].value ?? 0) >= 70).length
-    return { s, total: fs.length, good, poor: fs.length - good }
-  })
 
   const repair = approved.filter(x => x.r.tags.includes('repair_priority')).sort((a, b) => (b.r.pillars[1].value ?? 0) - (a.r.pillars[1].value ?? 0))
   const underused = approved.filter(x => x.r.tags.includes('underused')).sort((a, b) => (a.r.pillars[1].value ?? 0) - (b.r.pillars[1].value ?? 0))
@@ -172,10 +166,7 @@ export default function StateDashboard() {
 
         {tab === 1 && (
           <Stack gap={2}>
-            <Card sx={{ height: { xs: 300, sm: 380 }, overflow: 'hidden', p: 0 }}>
-              <MapView pins={approved.map(({ f, r }) => ({ id: f.id, lat: f.lat!, lng: f.lng!, color: BAND_COLORS[r.band], icon: typeIcon(f.type), label: `${f.name} · ${r.score ?? '–'}` }))}
-                onPinClick={id => nav(`/state/review/${id}`)} />
-            </Card>
+            <CoverageView approved={approved} all={db.facilities} dist={dist} />
             <Stack direction="row" gap={1} flexWrap="wrap">
               {bandData.map(b => <Chip key={b.b} label={`${b.name}: ${b.n}`} sx={{ bgcolor: BAND_COLORS[b.b], color: '#fff' }} />)}
             </Stack>
@@ -225,19 +216,7 @@ export default function StateDashboard() {
 
         {tab === 2 && (
           <Stack gap={2} sx={{ '& > .MuiCard-root': { flex: 'none' } }}>
-            <ChartCard title={t('state.cwgReady')} icon="emoji_events" note={t('state.cwgNote')}>
-              <Stack divider={<Box sx={{ borderTop: '1px solid', borderColor: 'divider' }} />}>
-                {cwg.map(row => (
-                  <Stack key={row.s} direction="row" alignItems="center" gap={1} sx={{ py: 1 }}>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography fontWeight={500}>{t(`sport.${row.s}`)}</Typography>
-                      <Typography variant="caption" color="text.secondary">{t('state.cwgRow', { total: row.total, good: row.good, poor: row.poor })}</Typography>
-                    </Box>
-                    {row.total === 0 ? <Chip size="small" color="error" label={t('state.gap')} /> : row.good === 0 ? <Chip size="small" color="warning" label={t('state.poor')} /> : <Chip size="small" color="success" label={t('state.good')} />}
-                  </Stack>
-                ))}
-              </Stack>
-            </ChartCard>
+            <CwgReadiness approved={approved} />
             <Stack direction="row" gap={2} flexWrap="wrap">
               <ChartCard title={t('state.repairList')} icon="construction">
                 <Stack spacing={1}>

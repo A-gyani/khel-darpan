@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Icon, TopBar, ScoreBars, ScoreBadge, StatusChip, TagChips, Stars, useCurrentUser, Section, BottomBar, NotFound } from '../components/ui'
 import { HistoryList, ChangesCard, ReturnNote } from '../components/review'
+import { UsagePanel } from '../components/insights'
 import { MapView } from '../components/MapView'
 import { useDb, reviewFacility, avgRating } from '../data/store'
 import { computeScore } from '../lib/score'
@@ -108,6 +109,7 @@ export default function StateReview() {
           <Stack direction={{ xs: 'column', md: 'row-reverse' }} gap={2} alignItems="flex-start">
             {side}
             <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
+              <Box sx={{ mb: 3 }}><UsagePanel facilityId={f.id} /></Box>
               <Section title={t('common.photos')} icon="photo_library"><PhotoStrip f={f} flags /></Section>
               <FacilityDetails f={f} />
               <Section title={(t('wiz.steps', { returnObjects: true }) as string[])[5]} icon="star_rate">

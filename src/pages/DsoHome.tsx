@@ -20,6 +20,7 @@ export default function DsoHome() {
   const db = useDb()
   const user = useCurrentUser()!
   const [tab, setTab] = useState(0)
+  const [showMap, setShowMap] = useState(false)
   const [resolving, setResolving] = useState<string | null>(null)
   const [note, setNote] = useState('')
   const mine = db.facilities.filter(f => f.district === user.district)
@@ -70,12 +71,15 @@ export default function DsoHome() {
         )}
 
         {tab === 1 && (
-          <Stack direction={{ xs: 'column', md: 'row' }} gap={2}>
-            <Box sx={{ flex: { md: 1 }, flexShrink: 0, height: { xs: 280, md: 560 }, borderRadius: '16px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+          <Stack gap={1.5}>
+            <Button variant={showMap ? 'contained' : 'outlined'} startIcon={<Icon name={showMap ? 'close' : 'map'} />} onClick={() => setShowMap(!showMap)} sx={{ alignSelf: 'flex-start' }}>
+              {showMap ? t('dso.hideMap') : t('dso.showMap')}
+            </Button>
+            {showMap && <Box sx={{ height: { xs: 300, md: 420 }, flexShrink: 0, borderRadius: '16px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
               <MapView pins={mine.filter(f => f.lat != null).map(f => ({ id: f.id, lat: f.lat!, lng: f.lng!, color: BAND_COLORS[computeScore(f, db.checkins).band], icon: typeIcon(f.type), label: f.name }))}
                 onPinClick={id => nav(`/dso/f/${id}`)} />
-            </Box>
-            <Stack spacing={1} sx={{ flex: 1, maxHeight: { md: 560 }, overflowY: 'auto' }}>
+            </Box>}
+            <Stack spacing={1}>
               {[...mine].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map(f => {
                 const r = computeScore(f, db.checkins)
                 const tal = TALUKAS.find(x => x.id === f.taluka)

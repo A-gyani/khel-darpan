@@ -327,7 +327,9 @@
     "noReturned": "Nothing returned. Good work.",
     "stateComment": "State officer's comment",
     "poster": "Download QR poster",
-    "daysOpen": "{{count}} days open"
+    "daysOpen": "{{count}} days open",
+    "showMap": "Show on map",
+    "hideMap": "Hide map"
   },
   "wiz": {
     "steps": [
@@ -518,5 +520,39 @@
     "rejected": "Rejected",
     "deleted": "Draft deleted",
     "grievance_resolved": "Complaint resolved"
+  },
+  "usage": {
+    "title": "Usage (QR check-ins)",
+    "last30": "last 30 days",
+    "scans": "check-ins",
+    "people": "people",
+    "perWeek": "People per week (last 8 weeks)",
+    "bySport": "By sport",
+    "byGender": "Women and men",
+    "byAge": "Age group",
+    "busiestDays": "busiest days",
+    "timeOfDay": "Time of day",
+    "morning": "Morning (5–11)",
+    "afternoon": "Afternoon (11–4)",
+    "evening": "Evening (4–10)",
+    "fewScans": "Only {{count}} QR check-ins in 30 days. The Use score is based on the DSO's estimate — check that the QR poster is put up.",
+    "none": "No QR check-ins yet. Check that the QR poster is put up at the entrance."
+  },
+  "cov": {
+    "title": "Coverage by taluka",
+    "none": "No facility",
+    "onlyPoor": "Only poor",
+    "ok": "Covered",
+    "summary": "{{none}} talukas with no facility · {{poor}} with only poor facilities",
+    "legend": "Number of approved facilities, coloured by Health Score: green good, amber fair, red poor.",
+    "pending": "{{count}} awaiting review"
+  },
+  "cwgx": {
+    "ready": "Ready",
+    "atRisk": "At risk",
+    "gap": "Gap",
+    "rule": "Ready = a tagged CWG venue or training venue with Health Score 75+. At risk = tagged venue(s) exist but none scores 75+. Gap = no tagged venue for this sport.",
+    "noVenue": "No tagged CWG venue",
+    "others": "Other facilities offering this sport: {{count}} ({{good}} with score 75+)"
   }
 }

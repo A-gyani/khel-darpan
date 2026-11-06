@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Icon, TopBar, ScoreBars, ScoreBadge, StatusChip, TagChips, BottomBar, NotFound, DemoBadge, useCurrentUser } from '../components/ui'
 import { HistoryList, ReturnNote } from '../components/review'
+import { UsagePanel } from '../components/insights'
 import { PhotoStrip, FacilityDetails } from './FacilityPage'
 import { useDb, deleteDraft } from '../data/store'
 import { computeScore } from '../lib/score'
@@ -63,6 +64,7 @@ export default function DsoFacilityView() {
           </Stack>
           <ScoreBars r={r} />
         </CardContent></Card>
+        {f.status !== 'draft' && <Box sx={{ mb: 2 }}><UsagePanel facilityId={f.id} /></Box>}
 
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
           <Tab icon={<Icon name="info" />} iconPosition="start" label={t('common.details')} />

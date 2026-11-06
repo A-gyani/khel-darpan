@@ -108,8 +108,7 @@ export default function PublicMap() {
             </Button>
           ) : (
             <Button size="small" variant="outlined" onClick={() => nav('/login')} startIcon={<Icon name="badge" size={20} />} sx={{ flexShrink: 0, px: 1.5, minHeight: 40 }}>
-              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('public.officialLogin')}</Box>
-              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('public.officials')}</Box>
+              {t('public.officerLogin')}
             </Button>
           )}
         </Stack>

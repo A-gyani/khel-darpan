@@ -3,6 +3,12 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-lea
 import L from 'leaflet'
 import { useEffect } from 'react'
 
+// The map is locked to Gujarat. OpenStreetMap tiles draw international borders by OSM's own policy,
+// which differs from the official map of India; at zoom 7+ inside Gujarat those borders are never in view.
+// For production, switch to a provider that shows India's official boundaries (e.g. Bhuvan or Mappls).
+const GUJARAT_BOUNDS = L.latLngBounds([19.9, 68.0], [24.9, 74.6])
+const MIN_ZOOM = 7
+
 export interface MapPin { id: string; lat: number; lng: number; color: string; icon?: string; label?: string }
 
 const iconCache = new Map<string, L.DivIcon>()
@@ -54,7 +60,8 @@ export function MapView({ pins, onPinClick, height = '100%', draggablePinId, onD
   focus?: [number, number][]
 }) {
   return (
-    <MapContainer center={[23.0225, 72.5714]} zoom={11} style={{ height, width: '100%' }} scrollWheelZoom>
+    <MapContainer center={[23.0225, 72.5714]} zoom={11} style={{ height, width: '100%' }} scrollWheelZoom
+      minZoom={MIN_ZOOM} maxBounds={GUJARAT_BOUNDS} maxBoundsViscosity={1}>
       <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <Fit pins={pins} center={center} focus={focus} />
       <ClickHandler onClick={onMapClick} />

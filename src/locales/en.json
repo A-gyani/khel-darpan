@@ -1,5 +1,5 @@
 {
-  "app": { "name": "Khel Suvidha Gujarat", "tagline": "Every sports facility, mapped and cared for", "demo": "Demo data", "dept": "Sports Authority of Gujarat" },
+  "app": { "name": "Khel Darpan Gujarat", "tagline": "A true picture of every sports facility", "demo": "Demo data", "dept": "Sports Authority of Gujarat" },
   "common": {
     "back": "Back", "next": "Next", "save": "Save", "saveDraft": "Save draft", "submit": "Submit for review", "cancel": "Cancel",
     "close": "Close", "search": "Search", "filters": "Filters", "clear": "Clear", "apply": "Apply", "all": "All", "yes": "Yes", "no": "No",

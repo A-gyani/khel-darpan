@@ -1,4 +1,4 @@
-# Khel Suvidha Gujarat — prototype
+# Khel Darpan Gujarat — prototype
 
 SFIC 2026 · Problem statement **PS000012** (Sports, Youth & Cultural Activities Department):
 digital assessment, mapping and better use of sports facilities. Prototype scope: **Ahmedabad district only**.

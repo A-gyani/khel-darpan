@@ -7,7 +7,7 @@ import { buildSeed, SEED_VERSION } from './seed'
 import { uid } from '../lib/geo'
 import { MAX_CHECKINS_PER_DAY } from '../lib/constants'
 
-const DB_NAME = 'khel-suvidha'
+const DB_NAME = 'khel-darpan'
 let state: DB = buildSeed()
 const listeners = new Set<() => void>()
 let ready = false

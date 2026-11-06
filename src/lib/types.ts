@@ -13,7 +13,8 @@ export type CwgTag = 'none' | 'venue' | 'training'
 export type PhotoCaption = 'entrance' | 'playing_area' | 'toilets' | 'changing_room' | 'lighting' | 'damage' | 'other'
 
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
-export type DayTiming = { open: string; close: string } | null
+// open2/close2 = optional second shift (e.g. morning and evening)
+export type DayTiming = { open: string; close: string; open2?: string; close2?: string } | null
 export type Timings = Record<DayKey, DayTiming>
 
 export type ConditionKey =
@@ -138,6 +139,7 @@ export interface ReviewAction {
   by: string
   action: 'approved' | 'returned' | 'rejected'
   comment: string
+  reasons?: string[] // what the DSO must fix (return) – see RETURN_REASONS
   at: string
 }
 

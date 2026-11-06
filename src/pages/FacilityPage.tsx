@@ -7,6 +7,7 @@ import { useDb, publicFacilities, avgRating } from '../data/store'
 import { DAYS, TALUKAS } from '../lib/constants'
 import { directionsUrl } from '../lib/geo'
 import type { Facility } from '../lib/types'
+import { dayTimingText } from '../components/review'
 
 export function PhotoStrip({ f, flags }: { f: Facility; flags?: boolean }) {
   const { t } = useTranslation()
@@ -65,7 +66,7 @@ export function FacilityDetails({ f }: { f: Facility }) {
           {DAYS.map(d => (
             <Stack key={d} direction="row" justifyContent="space-between" sx={{ py: 0.5 }}>
               <Typography variant="body2">{t(`day.${d}`)}</Typography>
-              <Typography variant="body2" color={f.timings[d] ? 'text.primary' : 'text.secondary'}>{f.timings[d] ? `${f.timings[d]!.open} – ${f.timings[d]!.close}` : t('public.closed')}</Typography>
+              <Typography variant="body2" color={f.timings[d] ? 'text.primary' : 'text.secondary'}>{dayTimingText(f.timings[d], t('public.closed'))}</Typography>
             </Stack>
           ))}
         </CardContent></Card>

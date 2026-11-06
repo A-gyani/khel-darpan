@@ -11,6 +11,7 @@ import FacilityPage from './pages/FacilityPage'
 import QrLanding from './pages/QrLanding'
 import DsoHome from './pages/DsoHome'
 import DsoWizard from './pages/DsoWizard'
+import DsoFacilityView from './pages/DsoFacilityView'
 import StateDashboard from './pages/StateDashboard'
 import StateReview from './pages/StateReview'
 import Poster from './pages/Poster'
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/q/:id/:mode" element={<QrLanding />} />
             <Route path="/poster/:id" element={<Poster />} />
             <Route path="/dso" element={<Guard role="district_officer"><DsoHome /></Guard>} />
+            <Route path="/dso/f/:id" element={<Guard role="district_officer"><DsoFacilityView /></Guard>} />
             <Route path="/dso/edit/:id" element={<Guard role="district_officer"><DsoWizard /></Guard>} />
             <Route path="/state" element={<Guard role="state_officer"><StateDashboard /></Guard>} />
             <Route path="/state/review/:id" element={<Guard role="state_officer"><StateReview /></Guard>} />

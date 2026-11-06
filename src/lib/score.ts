@@ -36,6 +36,12 @@ function hoursOpenPerWeek(f: Facility): number {
     const [ch, cm] = t.close.split(':').map(Number)
     const diff = ch + cm / 60 - (oh + om / 60)
     if (diff > 0) h += diff
+    if (t.open2 && t.close2) {
+      const [a, b] = t.open2.split(':').map(Number)
+      const [c, d] = t.close2.split(':').map(Number)
+      const diff2 = c + d / 60 - (a + b / 60)
+      if (diff2 > 0) h += diff2
+    }
   }
   return h
 }

@@ -2,7 +2,7 @@
 import type { DB, Facility, CheckIn, Grievance, Rating, Photo, PhotoCaption, Timings, User, FacilityType, Ownership, CwgTag, Status } from '../lib/types'
 import { CONDITION_KEYS, SPORTS, districtOf } from '../lib/constants'
 
-export const SEED_VERSION = 8
+export const SEED_VERSION = 9
 
 // Deterministic random so the demo looks the same every time
 let s = 42
@@ -209,7 +209,7 @@ export function buildSeed(): DB {
 
   const reviews = facilities.filter(f => f.status === 'returned').map(f => ({
     id: `rv_${f.id}`, facilityId: f.id, by: 'u_state', action: 'returned' as const,
-    comment: 'Changing room photo missing. Please add it and re-check the toilet ratings.', at: iso(3),
+    comment: 'Changing room photo missing. Please add it and re-check the toilet ratings.', reasons: ['photos', 'condition'], at: iso(3),
   }))
 
   return { version: SEED_VERSION, users, facilities, checkins, grievances, ratings, reviews, audit: [] }

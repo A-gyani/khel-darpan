@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Box, Button, Card, CardContent, Chip, Container, FormControl, FormControlLabel, IconButton, InputLabel, LinearProgress, MenuItem, Select, Stack, Switch, TextField, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Icon, TopBar, Stars, ScoreBars, ScoreBadge, TagChips, StatusChip, useCurrentUser, BottomBar } from '../components/ui'
 import { CameraCapture } from '../components/CameraCapture'
 import { MapView } from '../components/MapView'
 import { useDb, saveFacility, submitFacility } from '../data/store'
-import { AMENITIES, CONDITION_KEYS, DAYS, FACILITY_TYPES, OWNERSHIP, SPORTS, TALUKAS, FAR_FROM_PIN_M, talukasOf, districtOf } from '../lib/constants'
+import { AMENITIES, CONDITION_KEYS, DAYS, FACILITY_TYPES, OWNERSHIP, SPORTS, TALUKAS, FAR_FROM_PIN_M, SURFACES, RETURN_REASONS, talukasOf, districtOf } from '../lib/constants'
 import { computeScore } from '../lib/score'
 import { getPosition, haversine, uid } from '../lib/geo'
 import { brand } from '../theme'
 import type { Facility, Photo, PhotoCaption } from '../lib/types'
 import { typeIcon } from './PublicMap'
+import { ReturnNote } from '../components/review'
 
 function blank(userId: string, district: string): Facility {
   const t = new Date().toISOString()
@@ -36,7 +37,8 @@ export default function DsoWizard() {
   const user = useCurrentUser()!
   const existing = db.facilities.find(f => f.id === id)
   const [f, setF] = useState<Facility>(() => existing ? structuredClone(existing) : blank(user.id, user.district || 'ahmedabad'))
-  const [step, setStep] = useState(0)
+  const [params] = useSearchParams()
+  const [step, setStep] = useState(() => Math.min(6, Math.max(0, Number(params.get('step')) || 0)))
   const [cam, setCam] = useState(false)
   const [msg, setMsg] = useState('')
   const chipRow = useRef<HTMLDivElement>(null)
@@ -51,6 +53,7 @@ export default function DsoWizard() {
   const score = useMemo(() => computeScore(f, db.checkins), [f, db.checkins])
   const rv = [...db.reviews].reverse().find(r => r.facilityId === f.id)
   const lastReturned = f.status === 'returned' && rv?.action === 'returned' ? rv : null
+  const fixSteps = new Set((lastReturned?.reasons || []).map(r => RETURN_REASONS.find(x => x.id === r)?.step ?? 0))
 
   const missingPhotos = REQUIRED.filter(group => !f.photos.some(p => group.includes(p.caption))).map(g => g.map(c => t(`caption.${c}`)).join(' / '))
   const nextCaption: PhotoCaption = (REQUIRED.find(g => !f.photos.some(p => g.includes(p.caption)))?.[0]) || 'other'
@@ -88,6 +91,10 @@ export default function DsoWizard() {
   }
 
   function save(andSubmit = false) {
+    if (!f.address.trim()) {
+      const tl = TALUKAS.find(x => x.id === f.taluka)
+      f.address = [f.ward, tl?.en, districtOf(f.district) ? `${districtOf(f.district)!.en} district` : ''].filter(Boolean).join(', ')
+    }
     const changed = existing ? (Object.keys(f) as (keyof Facility)[]).filter(k => JSON.stringify(f[k]) !== JSON.stringify(existing[k]) && k !== 'updatedAt') : []
     if (andSubmit) {
       const m = missing()
@@ -126,14 +133,17 @@ export default function DsoWizard() {
           </Select></FormControl>
         <TextField label={t('wiz.ward')} value={f.ward} onChange={e => set('ward', e.target.value)} />
       </Stack>
-      <TextField label={t('wiz.address')} value={f.address} onChange={e => set('address', e.target.value)} multiline minRows={2} />
+      <TextField label={`${t('wiz.address')} (${t('wiz.optional')})`} value={f.address} onChange={e => set('address', e.target.value)} multiline minRows={2} helperText={t('wiz.addressHint')} />
       <FormControl fullWidth><InputLabel>{t('wiz.cwg')}</InputLabel>
         <Select label={t('wiz.cwg')} value={f.cwg} onChange={e => set('cwg', e.target.value as Facility['cwg'])}>
           {(['none', 'venue', 'training'] as const).map(x => <MenuItem key={x} value={x}>{t(`cwg.${x}`)}</MenuItem>)}
         </Select></FormControl>
       <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
         <TextField label={t('wiz.capacity')} type="number" value={f.capacity ?? ''} onChange={e => set('capacity', e.target.value ? Number(e.target.value) : null)} />
-        <TextField label={t('wiz.surface')} value={f.surface} onChange={e => set('surface', e.target.value)} />
+        <FormControl fullWidth><InputLabel>{t('wiz.surfaceType')}</InputLabel>
+          <Select label={t('wiz.surfaceType')} value={SURFACES.includes(f.surface) ? f.surface : f.surface ? 'other' : ''} onChange={e => set('surface', e.target.value)}>
+            {SURFACES.map(x => <MenuItem key={x} value={x}>{t(`surface.${x}`)}</MenuItem>)}
+          </Select></FormControl>
         <TextField label={t('wiz.yearBuilt')} type="number" value={f.yearBuilt ?? ''} onChange={e => set('yearBuilt', e.target.value ? Number(e.target.value) : null)} />
       </Stack>
     </Stack>,
@@ -217,22 +227,41 @@ export default function DsoWizard() {
 
     // 5 Timings & fees
     <Stack spacing={2} key="t">
-      <Typography fontWeight={500}>{t('wiz.timings')}</Typography>
+      <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
+        <Typography fontWeight={500} sx={{ flex: 1 }}>{t('wiz.timings')}</Typography>
+        <Button size="small" variant="outlined" startIcon={<Icon name="content_copy" size={18} />} disabled={!f.timings.mon}
+          onClick={() => set('timings', Object.fromEntries(DAYS.map(d => [d, f.timings[d] ? { ...f.timings.mon! } : null])) as Facility['timings'])}>
+          {t('wiz.sameAllDays')}
+        </Button>
+      </Stack>
       <Card><CardContent sx={{ px: { xs: 1, sm: 2 } }}>
         {DAYS.map(d => {
           const v = f.timings[d]
+          const setDay = (nv: Facility['timings'][typeof d]) => set('timings', { ...f.timings, [d]: nv })
+          const time = (value: string, onChange: (x: string) => void) => (
+            <TextField size="small" type="time" value={value} onChange={e => onChange(e.target.value)} sx={{ flex: 1, minWidth: 0, maxWidth: 140 }} inputProps={{ style: { paddingLeft: 8, paddingRight: 4 } }} />
+          )
           return (
-            <Stack key={d} direction="row" alignItems="center" gap={{ xs: 0.75, sm: 1.5 }} sx={{ py: 0.75 }}>
-              <Typography sx={{ width: { xs: 36, sm: 48 }, flexShrink: 0 }}>{t(`day.${d}`)}</Typography>
-              <Switch sx={{ flexShrink: 0 }} checked={!!v} onChange={e => set('timings', { ...f.timings, [d]: e.target.checked ? { open: '06:00', close: '20:00' } : null })} />
-              {v ? (
-                <>
-                  <TextField size="small" type="time" value={v.open} onChange={e => set('timings', { ...f.timings, [d]: { ...v, open: e.target.value } })} sx={{ flex: 1, minWidth: 0, maxWidth: 140 }} inputProps={{ style: { paddingLeft: 8, paddingRight: 4 } }} />
-                  <Typography>–</Typography>
-                  <TextField size="small" type="time" value={v.close} onChange={e => set('timings', { ...f.timings, [d]: { ...v, close: e.target.value } })} sx={{ flex: 1, minWidth: 0, maxWidth: 140 }} inputProps={{ style: { paddingLeft: 8, paddingRight: 4 } }} />
-                </>
-              ) : <Typography color="text.secondary">{t('wiz.closed')}</Typography>}
-            </Stack>
+            <Box key={d} sx={{ py: 0.75, borderBottom: d === 'sun' ? 'none' : '1px solid', borderColor: 'divider' }}>
+              <Stack direction="row" alignItems="center" gap={{ xs: 0.75, sm: 1.5 }}>
+                <Typography sx={{ width: { xs: 36, sm: 48 }, flexShrink: 0 }}>{t(`day.${d}`)}</Typography>
+                <Switch sx={{ flexShrink: 0 }} checked={!!v} onChange={e => setDay(e.target.checked ? { open: '06:00', close: '20:00' } : null)} />
+                {v ? (
+                  <>{time(v.open, x => setDay({ ...v, open: x }))}<Typography>–</Typography>{time(v.close, x => setDay({ ...v, close: x }))}</>
+                ) : <Typography color="text.secondary">{t('wiz.closed')}</Typography>}
+              </Stack>
+              {v && (v.open2 !== undefined ? (
+                <Stack direction="row" alignItems="center" gap={{ xs: 0.75, sm: 1.5 }} sx={{ mt: 0.75 }}>
+                  <Box sx={{ width: { xs: 36, sm: 48 }, flexShrink: 0 }} />
+                  <IconButton size="small" onClick={() => setDay({ open: v.open, close: v.close })} aria-label={t('wiz.removeShift')} sx={{ flexShrink: 0, width: 58 }}><Icon name="remove_circle" color="#B3261E" /></IconButton>
+                  {time(v.open2 || '16:00', x => setDay({ ...v, open2: x }))}<Typography>–</Typography>{time(v.close2 || '20:00', x => setDay({ ...v, close2: x }))}
+                </Stack>
+              ) : (
+                <Button size="small" startIcon={<Icon name="add" size={18} />} onClick={() => setDay({ ...v, close: v.close > '12:00' ? '11:00' : v.close, open2: '16:00', close2: '20:00' })} sx={{ ml: { xs: '44px', sm: '56px' }, mt: 0.25, minHeight: 32 }}>
+                  {t('wiz.addShift')}
+                </Button>
+              ))}
+            </Box>
           )
         })}
       </CardContent></Card>
@@ -299,20 +328,22 @@ export default function DsoWizard() {
 
   return (
     <>
-      <TopBar back="/dso" title={existing ? f.name || t('dso.add') : t('dso.add')} actions={existing ? <Box sx={{ display: { xs: 'none', sm: 'block' } }}><StatusChip status={f.status} /></Box> : undefined} />
+      <TopBar back={existing ? `/dso/f/${f.id}` : '/dso'} title={existing ? f.name || t('dso.add') : t('dso.add')} actions={existing ? <Box sx={{ display: { xs: 'none', sm: 'block' } }}><StatusChip status={f.status} /></Box> : undefined} />
       <LinearProgress variant="determinate" value={((step + 1) / steps.length) * 100} sx={{ height: 4 }} />
       <Container maxWidth="md" sx={{ py: 2, pb: 14, px: { xs: 1.5, sm: 3 } }}>
         <Stack ref={chipRow} direction="row" gap={0.75} sx={{ overflowX: 'auto', pb: 1.5 }}>
           {steps.map((s, i) => (
-            <Chip key={s} label={`${i + 1}. ${s}`} onClick={() => setStep(i)} color={i === step ? 'primary' : 'default'} variant={i === step ? 'filled' : 'outlined'} sx={{ flexShrink: 0 }} />
+            <Chip key={s} label={`${i + 1}. ${s}`} onClick={() => setStep(i)} color={i === step ? 'primary' : fixSteps.has(i) ? 'warning' : 'default'} variant={i === step || fixSteps.has(i) ? 'filled' : 'outlined'} icon={fixSteps.has(i) ? <Icon name="build" size={16} color={i === step ? '#fff' : undefined} /> : undefined} sx={{ flexShrink: 0 }} />
           ))}
         </Stack>
-        {lastReturned && <Alert severity="warning" icon={<Icon name="comment" />} sx={{ mb: 2 }}><b>{t('dso.stateComment')}:</b> {lastReturned.comment}</Alert>}
+        {lastReturned && step === 0 && !fixSteps.has(0) && <Box sx={{ mb: 2 }}><ReturnNote review={lastReturned} /></Box>}
+        {lastReturned && fixSteps.has(step) && <Box sx={{ mb: 2 }}><ReturnNote review={lastReturned} /></Box>}
         {msg && <Alert severity={msg === t('wiz.saved') ? 'success' : 'warning'} onClose={() => setMsg('')} sx={{ mb: 2 }}>{msg}</Alert>}
         <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>
           <Typography variant="h3" sx={{ flex: 1 }}>{steps[step]} <Typography component="span" variant="body2" color="text.secondary">· {step + 1}/{steps.length}</Typography></Typography>
           {existing && <Box sx={{ display: { xs: 'block', sm: 'none' } }}><StatusChip status={f.status} /></Box>}
         </Stack>
+        {fixSteps.has(step) && <Alert severity="warning" icon={<Icon name="build" />} sx={{ mb: 2 }}>{t('fv.askedToFix')}</Alert>}
         {body[step]}
       </Container>
 

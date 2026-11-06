@@ -26,13 +26,17 @@ export async function sha256(dataUrl: string): Promise<string> {
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 
-export function isOpenNow(timings: Record<string, { open: string; close: string } | null> | undefined, now = new Date()) {
+export function isOpenNow(timings: Record<string, { open: string; close: string; open2?: string; close2?: string } | null> | undefined, now = new Date()) {
   if (!timings) return false
   const key = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()]
   const t = timings[key]
   if (!t) return false
   const mins = now.getHours() * 60 + now.getMinutes()
-  const [oh, om] = t.open.split(':').map(Number)
-  const [ch, cm] = t.close.split(':').map(Number)
-  return mins >= oh * 60 + om && mins < ch * 60 + cm
+  const inRange = (o?: string, c?: string) => {
+    if (!o || !c) return false
+    const [oh, om] = o.split(':').map(Number)
+    const [ch, cm] = c.split(':').map(Number)
+    return mins >= oh * 60 + om && mins < ch * 60 + cm
+  }
+  return inRange(t.open, t.close) || inRange(t.open2, t.close2)
 }

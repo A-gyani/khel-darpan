@@ -9,6 +9,8 @@ import { computeScore, BAND_COLORS } from '../lib/score'
 import { ESCALATE_AFTER_DAYS, TALUKAS, districtOf, placeName } from '../lib/constants'
 import type { Status } from '../lib/types'
 import { typeIcon } from './PublicMap'
+import { ReturnNote } from '../components/review'
+import { fixStep } from './DsoFacilityView'
 
 export const daysSince = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 864e5))
 
@@ -57,9 +59,9 @@ export default function DsoHome() {
               const rv = [...db.reviews].reverse().find(r => r.facilityId === f.id)
               return (
                 <Card key={f.id} sx={{ borderColor: '#FFD9B0' }}>
-                  <CardActionArea onClick={() => nav(`/dso/edit/${f.id}`)} sx={{ p: 2 }}>
-                    <Stack direction="row" alignItems="center" gap={1}><Typography fontWeight={500} sx={{ flex: 1 }}>{f.name}</Typography><StatusChip status={f.status} /></Stack>
-                    {rv && <Alert severity="warning" icon={<Icon name="comment" />} sx={{ mt: 1 }}><b>{t('dso.stateComment')}:</b> {rv.comment}</Alert>}
+                  <CardActionArea onClick={() => nav(`/dso/edit/${f.id}?step=${fixStep(rv?.reasons)}`)} sx={{ p: 2 }}>
+                    <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}><Typography fontWeight={500} sx={{ flex: 1 }}>{f.name}</Typography><StatusChip status={f.status} /></Stack>
+                    {rv && <ReturnNote review={rv} action={<Typography variant="body2" fontWeight={700} color="warning.dark"><Icon name="build" size={18} /> {t('fv.fixNow')} →</Typography>} />}
                   </CardActionArea>
                 </Card>
               )
@@ -71,7 +73,7 @@ export default function DsoHome() {
           <Stack direction={{ xs: 'column', md: 'row' }} gap={2}>
             <Box sx={{ flex: { md: 1 }, flexShrink: 0, height: { xs: 280, md: 560 }, borderRadius: '16px', overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
               <MapView pins={mine.filter(f => f.lat != null).map(f => ({ id: f.id, lat: f.lat!, lng: f.lng!, color: BAND_COLORS[computeScore(f, db.checkins).band], icon: typeIcon(f.type), label: f.name }))}
-                onPinClick={id => nav(`/dso/edit/${id}`)} />
+                onPinClick={id => nav(`/dso/f/${id}`)} />
             </Box>
             <Stack spacing={1} sx={{ flex: 1, maxHeight: { md: 560 }, overflowY: 'auto' }}>
               {[...mine].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map(f => {
@@ -79,7 +81,7 @@ export default function DsoHome() {
                 const tal = TALUKAS.find(x => x.id === f.taluka)
                 return (
                   <Card key={f.id} sx={{ display: 'flex', alignItems: 'stretch' }}>
-                    <CardActionArea onClick={() => nav(`/dso/edit/${f.id}`)} sx={{ p: 1.5, display: 'flex', gap: 1.5, justifyContent: 'flex-start', flex: 1, minWidth: 0 }}>
+                    <CardActionArea onClick={() => nav(`/dso/f/${f.id}`)} sx={{ p: 1.5, display: 'flex', gap: 1.5, justifyContent: 'flex-start', flex: 1, minWidth: 0 }}>
                       <ScoreBadge r={r} />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography fontWeight={500} sx={{ lineHeight: 1.25 }}>{f.name}</Typography>

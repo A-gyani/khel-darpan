@@ -81,6 +81,20 @@ export const GRIEVANCE_CATEGORIES: GrievanceCategory[] = [
   'closed_when_should_be_open', 'damaged', 'unsafe', 'wrong_info', 'fee_issue', 'staff', 'other',
 ]
 
+export const SURFACES = ['natural_grass', 'synthetic_turf', 'clay_earth', 'concrete', 'wooden', 'synthetic_court', 'mats', 'water', 'other']
+
+// Return reasons and the form step (0-based) the DSO is sent to
+export const RETURN_REASONS: { id: string; step: number }[] = [
+  { id: 'photos', step: 1 },
+  { id: 'location', step: 2 },
+  { id: 'condition', step: 5 },
+  { id: 'details', step: 0 },
+  { id: 'timings_fees', step: 4 },
+  { id: 'sports', step: 3 },
+  { id: 'duplicate', step: 0 },
+  { id: 'other', step: 0 },
+]
+
 export const ESCALATE_AFTER_DAYS = 7
 export const FAR_FROM_PIN_M = 200
 export const POOR_GPS_M = 50

@@ -75,8 +75,18 @@ function audit(db: DB, actor: string, facilityId: string, action: string, detail
 }
 
 export function saveFacility(f: Facility, actor: string, changed: string[] = []) {
-  const exists = state.facilities.some(x => x.id === f.id)
-  const updated = { ...f, updatedAt: now() }
+  const stored = state.facilities.find(x => x.id === f.id)
+  const exists = !!stored
+  let updated: Facility = { ...f, updatedAt: now() }
+  if (stored?.status === 'approved') {
+    // Editing an approved facility: keep the approved copy for the public and the reviewer,
+    // and turn the working copy into a draft until it is submitted and approved again.
+    const { published: _p, ...approvedCopy } = stored
+    updated = { ...updated, published: approvedCopy, status: 'draft' }
+  } else if (stored) {
+    // status only changes through submit / review, never through the form's own copy
+    updated = { ...updated, status: stored.status, published: stored.published ?? updated.published ?? null }
+  }
   const facilities = exists ? state.facilities.map(x => (x.id === f.id ? updated : x)) : [...state.facilities, updated]
   commit(audit({ ...state, facilities }, actor, f.id, exists ? 'updated' : 'created', changed.join(', ')))
 }
@@ -91,7 +101,7 @@ export function submitFacility(id: string, actor: string) {
   commit(audit({ ...state, facilities }, actor, id, 'submitted'))
 }
 
-export function reviewFacility(id: string, actor: string, action: ReviewAction['action'], comment: string) {
+export function reviewFacility(id: string, actor: string, action: ReviewAction['action'], comment: string, reasons: string[] = []) {
   const status = action
   const facilities = state.facilities.map(f => f.id !== id ? f : {
     ...f, status,
@@ -99,8 +109,16 @@ export function reviewFacility(id: string, actor: string, action: ReviewAction['
     lastVerifiedAt: action === 'approved' ? now() : f.lastVerifiedAt,
     published: action === 'approved' ? null : f.published,
   })
-  const reviews = [...state.reviews, { id: uid(), facilityId: id, by: actor, action, comment, at: now() }]
-  commit(audit({ ...state, facilities, reviews }, actor, id, action, comment))
+  const reviews = [...state.reviews, { id: uid(), facilityId: id, by: actor, action, comment, reasons, at: now() }]
+  commit(audit({ ...state, facilities, reviews }, actor, id, action, [reasons.length ? `[${reasons.join(', ')}]` : '', comment].filter(Boolean).join(' ')))
+}
+
+/** DSO can delete only their own drafts (never submitted or approved records). */
+export function deleteDraft(id: string, actor: string): boolean {
+  const f = state.facilities.find(x => x.id === id)
+  if (!f || f.status !== 'draft') return false
+  commit(audit({ ...state, facilities: state.facilities.filter(x => x.id !== id) }, actor, id, 'deleted', f.name))
+  return true
 }
 
 /** What the public sees: approved facilities, or the last approved copy while an edit is under review */

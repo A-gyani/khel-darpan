@@ -40,6 +40,10 @@ export const theme = responsiveFontSizes(createTheme({
     MuiPaper: { styleOverrides: { rounded: { borderRadius: 16 } } },
     MuiChip: { styleOverrides: { root: { borderRadius: 8, height: 34, fontWeight: 500 } } },
     MuiTextField: { defaultProps: { fullWidth: true, variant: 'outlined' } },
+    // dropdown menus must not lock / reset the page scroll (form jumps on phones)
+    MuiMenu: { defaultProps: { disableScrollLock: true } },
+    MuiPopover: { defaultProps: { disableScrollLock: true } },
+    MuiSelect: { defaultProps: { MenuProps: { disableScrollLock: true } } },
     MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 12 } } },
     MuiAppBar: { defaultProps: { elevation: 0, color: 'inherit' } },
     MuiDialog: { styleOverrides: { paper: { borderRadius: 28 } } },

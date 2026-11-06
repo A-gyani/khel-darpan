@@ -1,14 +1,19 @@
+// State officer home. Built for all 34 districts: one district dropdown, short filtered lists, no decorative charts.
 import { useMemo, useState } from 'react'
-import { Alert, Box, Card, CardActionArea, CardContent, Chip, Container, Stack, Tab, Tabs, Table, TableBody, TableCell, TableHead, TableRow, Typography, Button } from '@mui/material'
+import { Alert, Box, Button, Card, CardActionArea, Chip, Container, FormControl, InputAdornment, InputLabel, MenuItem, Select, Stack, Tab, Tabs, TextField, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts'
-import { Icon, TopBar, ScoreBadge, StatusChip, Section, TagChips } from '../components/ui'
-import { CoverageView, CwgReadiness } from '../components/insights'
+import { Icon, TopBar } from '../components/ui'
 import { useDb, resetDemo } from '../data/store'
-import { computeScore, BAND_COLORS } from '../lib/score'
-import { CWG_SPORTS, ESCALATE_AFTER_DAYS, FACILITY_TYPES, GRIEVANCE_CATEGORIES, DISTRICTS, talukasOf, districtOf, placeName } from '../lib/constants'
-import type { DB } from '../lib/types'
+import { computeScore, BAND_COLORS, weeklyUsersFromQr, MIN_SCANS_FOR_QR } from '../lib/score'
+import type { ScoreResult } from '../lib/score'
+import { CWG_SPORTS, ESCALATE_AFTER_DAYS, FACILITY_TYPES, GRIEVANCE_CATEGORIES, SPORTS, DISTRICTS, TALUKAS, talukasOf, districtOf, placeName } from '../lib/constants'
+import type { DB, Facility } from '../lib/types'
+import { brand } from '../theme'
+import { daysSince } from './DsoHome'
+
+type Scored = { f: Facility; r: ScoreResult }
+const PAGE = 20
 
 /** Limit all data to one district ('' = whole state). */
 function scope(db: DB, dist: string): DB {
@@ -18,267 +23,316 @@ function scope(db: DB, dist: string): DB {
   const by = <T extends { facilityId: string }>(xs: T[]) => xs.filter(x => ids.has(x.facilityId))
   return { ...db, facilities, checkins: by(db.checkins), grievances: by(db.grievances), ratings: by(db.ratings), reviews: by(db.reviews), audit: by(db.audit) }
 }
-import { brand } from '../theme'
-import { daysSince } from './DsoHome'
-import { typeIcon } from './PublicMap'
 
-const C = { blue: brand.blue, orange: brand.orange, green: brand.green, grey: '#9AA7B5' }
+function useLS(key: string, init: string): [string, (v: string) => void] {
+  const [v, setV] = useState<string>(() => { try { return localStorage.getItem(key) ?? init } catch { return init } })
+  return [v, (x: string) => { setV(x); try { localStorage.setItem(key, x) } catch { /* ignore */ } }]
+}
 
-function Kpi({ icon, label, value, sub, color = brand.blue, onClick }: { icon: string; label: string; value: number | string; sub?: string; color?: string; onClick?: () => void }) {
+function Pick({ label, value, onChange, options, width = 160 }: { label: string; value: string; onChange: (v: string) => void; options: [string, string][]; width?: number }) {
   return (
-    <Card>
-      <CardActionArea onClick={onClick} disabled={!onClick} sx={{ p: { xs: 1.5, sm: 2 }, height: '100%' }}>
-        <Stack direction="row" alignItems="center" gap={1}>
-          <Box sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 }, borderRadius: '12px', bgcolor: color + '1F', display: 'grid', placeItems: 'center', flexShrink: 0 }}><Icon name={icon} color={color} /></Box>
-          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.25, fontSize: { xs: 12.5, sm: 14 } }}>{label}</Typography>
-        </Stack>
-        <Typography sx={{ fontSize: { xs: 26, sm: 34 }, fontWeight: 500, mt: 1, lineHeight: 1.1 }}>{value}</Typography>
-        {sub && <Typography variant="caption" color="text.secondary">{sub}</Typography>}
+    <FormControl size="small" sx={{ minWidth: width, flexShrink: 0 }}>
+      <InputLabel shrink>{label}</InputLabel>
+      <Select label={label} value={value} displayEmpty notched onChange={e => onChange(e.target.value)}>
+        {options.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}
+      </Select>
+    </FormControl>
+  )
+}
+
+/** Filters sit in one horizontally scrolling row so the list starts on the first screen. */
+function FilterRow({ children }: { children: React.ReactNode }) {
+  return <Stack direction="row" gap={1} sx={{ overflowX: 'auto', py: 1, mb: 1, mx: -0.5, px: 0.5, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>{children}</Stack>
+}
+
+function More({ shown, total, onMore }: { shown: number; total: number; onMore: () => void }) {
+  const { t } = useTranslation()
+  if (shown >= total) return null
+  return <Button fullWidth variant="text" onClick={onMore} sx={{ mt: 1 }}>{t('sd.showMore', { count: total - shown })}</Button>
+}
+
+function BandChip({ r }: { r: ScoreResult }) {
+  const { t } = useTranslation()
+  return <Chip size="small" label={t(`sd.band.${r.band}`)} sx={{ bgcolor: BAND_COLORS[r.band], color: '#fff', height: 24, fontWeight: 500 }} />
+}
+
+function Row({ title, sub, right, onClick, alert }: { title: string; sub?: string; right?: React.ReactNode; onClick?: () => void; alert?: boolean }) {
+  return (
+    <Card sx={{ borderColor: alert ? 'error.light' : undefined }}>
+      <CardActionArea onClick={onClick} disabled={!onClick} sx={{ px: 1.5, py: 1.1, display: 'flex', gap: 1, justifyContent: 'flex-start', alignItems: 'center' }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography fontWeight={500} sx={{ lineHeight: 1.3 }}>{title}</Typography>
+          {sub && <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.3 }}>{sub}</Typography>}
+        </Box>
+        {right}
       </CardActionArea>
     </Card>
   )
 }
 
-function ChartCard({ title, icon, children, note }: { title: string; icon: string; children: React.ReactNode; note?: string }) {
-  return (
-    <Card sx={{ flex: '1 1 420px', minWidth: 0 }}>
-      <CardContent sx={{ px: { xs: 1.5, sm: 2 }, overflowX: 'auto' }}>
-        <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}><Icon name={icon} color={brand.blue} /><Typography variant="h4">{title}</Typography></Stack>
-        {note && <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>{note}</Typography>}
-        {children}
-      </CardContent>
-    </Card>
-  )
+function Empty({ text }: { text: string }) {
+  return <Alert severity="success" icon={<Icon name="check_circle" />}>{text}</Alert>
 }
 
 export default function StateDashboard() {
   const { t, i18n } = useTranslation()
   const nav = useNavigate()
   const fullDb = useDb()
-  const [dist, setDist] = useState<string>(() => { try { return localStorage.getItem('ks_state_dist') || '' } catch { return '' } })
-  const pickDist = (d: string) => { setDist(d); try { localStorage.setItem('ks_state_dist', d) } catch { /* ignore */ } }
+  const [dist, setDist] = useLS('ks_state_dist', '')
+  const [tabS, setTabS] = useLS('ks_state_tab', '0')
+  const tab = Number(tabS)
   const db = useMemo(() => scope(fullDb, dist), [fullDb, dist])
-  const [tab, setTab] = useState(0)
+  const L = (p: { en: string; gu: string } | undefined) => placeName(p, i18n.language)
+  const talName = (id: string) => L(TALUKAS.find(x => x.id === id))
+  const where = (f: Facility) => [dist ? '' : L(districtOf(f.district)), talName(f.taluka)].filter(Boolean).join(' · ')
 
-  const scored = useMemo(() => db.facilities.map(f => ({ f, r: computeScore(f, db.checkins) })), [db.facilities, db.checkins])
+  const scored: Scored[] = useMemo(() => db.facilities.map(f => ({ f, r: computeScore(f, db.checkins) })), [db])
   const approved = scored.filter(x => x.f.status === 'approved')
-  const queue = db.facilities.filter(f => f.status === 'submitted').sort((a, b) => (a.submittedAt || '').localeCompare(b.submittedAt || ''))
+  const queueAll = scored.filter(x => x.f.status === 'submitted').sort((a, b) => (a.f.submittedAt || '').localeCompare(b.f.submittedAt || ''))
   const openG = db.grievances.filter(g => g.status === 'open')
-  const overdue = openG.filter(g => daysSince(g.at) > ESCALATE_AFTER_DAYS)
-  const weekAgo = Date.now() - 7 * 864e5
-  const weekCi = db.checkins.filter(c => new Date(c.at).getTime() >= weekAgo)
-  const weekPeople = weekCi.reduce((s, c) => s + c.groupSize, 0)
+  const overdueG = openG.filter(g => daysSince(g.at) > ESCALATE_AFTER_DAYS)
+  const weekPeople = db.checkins.filter(c => Date.now() - new Date(c.at).getTime() <= 7 * 864e5).reduce((s, c) => s + c.groupSize, 0)
 
-  // charts
-  const sportData = useMemo(() => {
-    const m = new Map<string, number>()
-    approved.forEach(({ f }) => f.sports.forEach(s => m.set(s, (m.get(s) || 0) + 1)))
-    return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([s, n]) => ({ name: t(`sport.${s}`), n }))
-  }, [approved, i18n.language]) // eslint-disable-line
-  const typeData = FACILITY_TYPES.map(ty => ({ name: t(`type.${ty}`), n: approved.filter(x => x.f.type === ty).length })).filter(x => x.n)
-  const bandData = (['green', 'amber', 'red', 'grey'] as const).map(b => ({ name: t(`band.${b}`), n: approved.filter(x => x.r.band === b).length, b }))
-  const trend = useMemo(() => {
-    const weeks = [3, 2, 1, 0].map(w => {
-      const end = Date.now() - w * 7 * 864e5, start = end - 7 * 864e5
-      const cs = db.checkins.filter(c => { const ts = new Date(c.at).getTime(); return ts >= start && ts < end })
-      const sum = (g: string[]) => cs.filter(c => g.includes(c.gender)).reduce((s, c) => s + c.groupSize, 0)
-      return { name: new Date(end - 864e5).toLocaleDateString(i18n.language === 'gu' ? 'gu-IN' : 'en-IN', { day: 'numeric', month: 'short' }), female: sum(['female']), male: sum(['male']), other: sum(['other', 'na']) }
+  // ---- filters (each tab keeps its own) ----
+  const [qFlag, setQFlag] = useState('all')
+  const [qSort, setQSort] = useState('oldest')
+  const [qN, setQN] = useState(PAGE)
+  const [fSearch, setFSearch] = useState('')
+  const [fTal, setFTal] = useState('')
+  const [fType, setFType] = useState('')
+  const [fSport, setFSport] = useState('')
+  const [fBand, setFBand] = useState('')
+  const [fNeed, setFNeed] = useState('')
+  const [fN, setFN] = useState(PAGE)
+  const [dShow, setDShow] = useState('all')
+  const [dSort, setDSort] = useState('pending')
+  const [gStatus, setGStatus] = useState('open')
+  const [gCat, setGCat] = useState('')
+  const [gN, setGN] = useState(PAGE)
+  const [cStatus, setCStatus] = useState('')
+  const [cOpen, setCOpen] = useState<string | null>(null)
+
+  const chooseDistrict = (d: string) => { setDist(d); setFTal('') }
+  const distOptions: [string, string][] = [['', t('sd.allGujarat', { count: DISTRICTS.length })], ...[...DISTRICTS].sort((a, b) => L(a).localeCompare(L(b))).map(d => [d.id, L(d)] as [string, string])]
+
+  // Review queue
+  const queue = queueAll
+    .filter(x => qFlag === 'all' || x.f.photos.some(p => p.flagFar || p.flagDuplicate || p.flagPoorGps))
+    .sort((a, b) => qSort === 'oldest' ? 0 : (a.r.score ?? 0) - (b.r.score ?? 0))
+
+  // Facilities
+  const stale = (f: Facility) => !f.lastVerifiedAt || Date.now() - new Date(f.lastVerifiedAt).getTime() > 182 * 864e5
+  const fewScans = (f: Facility) => weeklyUsersFromQr(db.checkins, f.id).scans < MIN_SCANS_FOR_QR
+  const fac = approved.filter(({ f, r }) => {
+    if (fSearch && !f.name.toLowerCase().includes(fSearch.toLowerCase())) return false
+    if (fTal && f.taluka !== fTal) return false
+    if (fType && f.type !== fType) return false
+    if (fSport && !f.sports.includes(fSport)) return false
+    if (fBand && r.band !== fBand) return false
+    if (fNeed === 'repair_priority' || fNeed === 'underused' || fNeed === 'not_women_friendly') return r.tags.includes(fNeed)
+    if (fNeed === 'few_scans') return fewScans(f)
+    if (fNeed === 'stale') return stale(f)
+    return true
+  }).sort((a, b) => (a.r.score ?? 0) - (b.r.score ?? 0))
+
+  // Districts / talukas
+  const unitRows = (dist ? talukasOf(dist).map(x => ({ id: x.id, name: L(x), match: (f: Facility) => f.taluka === x.id, talukas: 0 }))
+    : DISTRICTS.map(d => ({ id: d.id, name: L(d), match: (f: Facility) => f.district === d.id, talukas: talukasOf(d.id).length })))
+    .map(u => {
+      const fs = fullDb.facilities.filter(u.match)
+      const ap = fs.filter(f => f.status === 'approved')
+      const ids = new Set(fs.map(f => f.id))
+      const od = fullDb.grievances.filter(g => ids.has(g.facilityId) && g.status === 'open' && daysSince(g.at) > ESCALATE_AFTER_DAYS).length
+      const pend = fs.filter(f => f.status === 'submitted').length
+      const empty = dist ? 0 : talukasOf(u.id).filter(tl => !ap.some(f => f.taluka === tl.id)).length
+      const goodOrFair = ap.filter(f => ['green', 'amber'].includes(computeScore(f, fullDb.checkins).band)).length
+      const state = fs.length === 0 ? 'notStarted' : dist ? (ap.length === 0 ? 'none' : goodOrFair === 0 ? 'onlyPoor' : 'ok') : 'ok'
+      return { ...u, approved: ap.length, pending: pend, overdue: od, empty, state }
     })
-    return weeks
-  }, [db.checkins, i18n.language])
-  const gData = GRIEVANCE_CATEGORIES.map(c => {
-    const gs = db.grievances.filter(g => g.category === c)
-    return { name: t(`gcat.${c}`), open: gs.filter(g => g.status === 'open' && daysSince(g.at) <= ESCALATE_AFTER_DAYS).length, overdue: gs.filter(g => g.status === 'open' && daysSince(g.at) > ESCALATE_AFTER_DAYS).length, resolved: gs.filter(g => g.status === 'resolved').length }
-  }).filter(x => x.open + x.overdue + x.resolved)
+    .filter(u => dShow === 'all' || (dShow === 'notStarted' ? u.state === 'notStarted' : dShow === 'pending' ? u.pending > 0 : dShow === 'overdue' ? u.overdue > 0 : dShow === 'gaps' ? (u.state === 'none' || u.state === 'onlyPoor' || u.empty > 0) : true))
+    .sort((a, b) => dSort === 'name' ? a.name.localeCompare(b.name) : dSort === 'pending' ? b.pending - a.pending : dSort === 'overdue' ? b.overdue - a.overdue : a.approved - b.approved)
 
+  // Complaints
+  const fname = (id: string) => db.facilities.find(f => f.id === id)
+  const gList = db.grievances
+    .filter(g => gStatus === 'all' || (gStatus === 'open' ? g.status === 'open' : gStatus === 'overdue' ? g.status === 'open' && daysSince(g.at) > ESCALATE_AFTER_DAYS : g.status === 'resolved'))
+    .filter(g => !gCat || g.category === gCat)
+    .sort((a, b) => a.at.localeCompare(b.at))
 
-  const repair = approved.filter(x => x.r.tags.includes('repair_priority')).sort((a, b) => (b.r.pillars[1].value ?? 0) - (a.r.pillars[1].value ?? 0))
-  const underused = approved.filter(x => x.r.tags.includes('underused')).sort((a, b) => (a.r.pillars[1].value ?? 0) - (b.r.pillars[1].value ?? 0))
-
-  // whole state: one row per district; one district: one row per taluka
-  const units = dist ? talukasOf(dist) : DISTRICTS
-  const inUnit = (f: { taluka: string; district: string }, id: string) => (dist ? f.taluka === id : f.district === id)
-  const progress = units.map(tal => {
-    const fs = db.facilities.filter(f => inUnit(f, tal.id) && f.status !== 'draft')
-    const ids = new Set(fs.map(f => f.id))
-    const returnedCount = db.reviews.filter(r => ids.has(r.facilityId) && r.action === 'returned').length
-    const gs = db.grievances.filter(g => ids.has(g.facilityId))
-    const onTime = gs.filter(g => g.status === 'resolved' && g.resolvedAt && (new Date(g.resolvedAt).getTime() - new Date(g.at).getTime()) / 864e5 <= ESCALATE_AFTER_DAYS).length
-    const last = db.facilities.filter(f => inUnit(f, tal.id)).map(f => f.updatedAt).sort().pop()
-    return { tal, mapped: fs.length, approved: fs.filter(f => f.status === 'approved').length, returnedCount, gTotal: gs.length, onTime, last }
+  // CWG 2030 (whole state; venues are tagged facilities)
+  const allApproved = useMemo(() => fullDb.facilities.filter(f => f.status === 'approved').map(f => ({ f, r: computeScore(f, fullDb.checkins) })), [fullDb])
+  const cwgAll = CWG_SPORTS.map(s => {
+    const venues = allApproved.filter(x => x.f.cwg !== 'none' && x.f.sports.includes(s))
+    const status = venues.length === 0 ? 'gap' : venues.some(v => v.r.band === 'green') ? 'ready' : 'repair'
+    return { s, venues, status }
   })
+  const cwgRows = cwgAll.filter(r => !cStatus || r.status === cStatus)
+  const cwgCount = (s: string) => cwgAll.filter(r => r.status === s).length
+  const cwgStyle: Record<string, 'success' | 'warning' | 'error'> = { ready: 'success', repair: 'warning', gap: 'error' }
 
-  const fname = (id: string) => db.facilities.find(f => f.id === id)?.name || id
+  const Kpi = ({ icon, label, value, color, to }: { icon: string; label: string; value: number | string; color: string; to: number }) => (
+    <Card><CardActionArea onClick={() => setTabS(String(to))} sx={{ p: 1.25, display: 'flex', gap: 1, justifyContent: 'flex-start', alignItems: 'center' }}>
+      <Icon name={icon} color={color} />
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontSize: 22, fontWeight: 500, lineHeight: 1.1 }}>{value}</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2, display: 'block' }}>{label}</Typography>
+      </Box>
+    </CardActionArea></Card>
+  )
 
   return (
     <>
-      <TopBar title={`${t('state.dashboard')} · ${dist ? placeName(districtOf(dist), i18n.language) : t('state.gujarat')}`} />
-      <Container maxWidth="xl" sx={{ py: 2, pb: 6, px: { xs: 1.5, sm: 3 } }}>
-        <Stack direction="row" gap={1} sx={{ mb: 1.5, overflowX: 'auto', pb: 0.5 }}>
-          {[{ id: '', label: t('state.allDistricts') }, ...DISTRICTS.map(d => ({ id: d.id, label: placeName(d, i18n.language) }))].map(d => (
-            <Chip key={d.id || 'all'} label={d.label} onClick={() => pickDist(d.id)} color={dist === d.id ? 'primary' : 'default'} variant={dist === d.id ? 'filled' : 'outlined'}
-              icon={<Icon name={d.id ? 'location_city' : 'map'} size={18} color={dist === d.id ? '#fff' : undefined} />} sx={{ flexShrink: 0, bgcolor: dist === d.id ? undefined : '#fff' }} />
-          ))}
-        </Stack>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 1.25, mb: 2 }}>
-          <Kpi icon="location_on" label={t('state.total')} value={approved.length} sub={`${db.facilities.length} ${t('common.all').toLowerCase()}`} />
-          <Kpi icon="pending_actions" label={t('state.pending')} value={queue.length} color={brand.orange} onClick={() => setTab(0)} />
-          <Kpi icon="warning" label={t('state.overdueG')} value={overdue.length} sub={`${openG.length} ${t('dso.open').toLowerCase()}`} color="#C62828" onClick={() => setTab(3)} />
-          <Kpi icon="how_to_reg" label={t('state.checkinsWeek')} value={weekCi.length} sub={t('state.people', { count: weekPeople })} color={brand.green} />
+      <TopBar title={t('state.dashboard')} />
+      <Container maxWidth="lg" sx={{ py: 1.5, pb: 6, px: { xs: 1.5, sm: 3 } }}>
+        <FormControl fullWidth size="small" sx={{ mb: 1.5 }}>
+          <InputLabel shrink>{t('public.district')}</InputLabel>
+          <Select label={t('public.district')} value={dist} displayEmpty notched onChange={e => chooseDistrict(e.target.value)} MenuProps={{ PaperProps: { sx: { maxHeight: 420 } } }}
+            startAdornment={<InputAdornment position="start"><Icon name="location_city" size={20} /></InputAdornment>}>
+            {distOptions.map(([v, l]) => <MenuItem key={v || 'all'} value={v}>{l}</MenuItem>)}
+          </Select>
+        </FormControl>
+
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 1, mb: 1.5 }}>
+          <Kpi icon="pending_actions" label={t('state.pending')} value={queueAll.length} color={brand.orange} to={0} />
+          <Kpi icon="location_on" label={t('sd.approved')} value={approved.length} color={brand.blue} to={1} />
+          <Kpi icon="warning" label={t('state.overdueG')} value={overdueG.length} color="#C62828" to={3} />
+          <Kpi icon="how_to_reg" label={t('sd.peopleWeek')} value={weekPeople.toLocaleString('en-IN')} color={brand.green} to={1} />
         </Box>
 
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ mb: 2 }}>
-          <Tab icon={<Icon name="fact_check" />} iconPosition="start" label={`${t('state.review')} (${queue.length})`} />
-          <Tab icon={<Icon name="monitoring" />} iconPosition="start" label={t('state.dashboard')} />
-          <Tab icon={<Icon name="emoji_events" />} iconPosition="start" label="CWG 2030" />
-          <Tab icon={<Icon name="report" />} iconPosition="start" label={`${t('state.grievances')} (${openG.length})`} />
-          <Tab icon={<Icon name="groups" />} iconPosition="start" label={t('state.progress')} />
+        <Tabs value={tab} onChange={(_, v) => setTabS(String(v))} variant="scrollable" sx={{ mb: 0.5, minHeight: 44, '& .MuiTab-root': { minHeight: 44, px: 1.5 } }}>
+          <Tab label={`${t('sd.tabReview')} (${queueAll.length})`} />
+          <Tab label={t('sd.tabFacilities')} />
+          <Tab label={dist ? t('sd.tabTalukas') : t('sd.tabDistricts')} />
+          <Tab label={`${t('sd.tabComplaints')} (${openG.length})`} />
+          <Tab label="CWG 2030" />
         </Tabs>
 
         {tab === 0 && (
-          <Stack spacing={1.5}>
-            <Typography variant="body2" color="text.secondary">{t('state.toReview')}</Typography>
-            {queue.length === 0 && <Alert severity="success">{t('state.allClear')}</Alert>}
-            {queue.map(f => {
-              const r = computeScore(f, db.checkins)
-              const flags = f.photos.filter(p => p.flagFar || p.flagDuplicate || p.flagPoorGps).length
-              return (
-                <Card key={f.id}>
-                  <CardActionArea onClick={() => nav(`/state/review/${f.id}`)} sx={{ p: 1.5, display: 'flex', gap: 1.5, justifyContent: 'flex-start' }}>
-                    <Box component="img" src={f.photos[1]?.thumbUrl || f.photos[0]?.thumbUrl} alt="" sx={{ width: { xs: 64, sm: 96 }, height: { xs: 64, sm: 72 }, flexShrink: 0, borderRadius: '10px', objectFit: 'cover', bgcolor: '#E3ECF6' }} />
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography fontWeight={500} noWrap>{f.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">{!dist && <b>{placeName(districtOf(f.district), i18n.language)} · </b>}{t('state.submittedOn')} {f.submittedAt ? new Date(f.submittedAt).toLocaleDateString('en-IN') : ''} · {daysSince(f.submittedAt || f.updatedAt)} {t('common.days')}</Typography>
-                      <Stack direction="row" gap={0.5} sx={{ mt: 0.5 }} flexWrap="wrap">
-                        <StatusChip status={f.status} />
-                        {f.published && <Chip size="small" label="Re-review" sx={{ height: 26 }} />}
-                        {flags > 0 && <Chip size="small" color="warning" icon={<Icon name="flag" size={16} />} label={`${flags} ${t('state.flags')}`} sx={{ height: 26 }} />}
-                      </Stack>
-                    </Box>
-                    <ScoreBadge r={r} />
-                    <Icon name="chevron_right" color="#5B6B7E" />
-                  </CardActionArea>
-                </Card>
-              )
-            })}
-          </Stack>
+          <>
+            <FilterRow>
+              <Pick label={t('sd.show')} value={qFlag} onChange={setQFlag} options={[['all', t('sd.allEntries')], ['flagged', t('sd.flaggedOnly')]]} />
+              <Pick label={t('sd.sort')} value={qSort} onChange={setQSort} options={[['oldest', t('sd.oldestFirst')], ['score', t('sd.lowestScore')]]} />
+            </FilterRow>
+            <Stack spacing={1}>
+              {queue.length === 0 && <Empty text={t('state.allClear')} />}
+              {queue.slice(0, qN).map(({ f, r }) => {
+                const flags = f.photos.filter(p => p.flagFar || p.flagDuplicate || p.flagPoorGps).length
+                return <Row key={f.id} title={f.name} onClick={() => nav(`/state/review/${f.id}`)}
+                  sub={`${where(f)} · ${t('dso.daysOpen', { count: daysSince(f.submittedAt || f.updatedAt) })}${f.published ? ` · ${t('sd.edit')}` : ''}`}
+                  right={<Stack alignItems="flex-end" gap={0.5}><BandChip r={r} />{flags > 0 && <Chip size="small" color="warning" icon={<Icon name="flag" size={14} />} label={flags} sx={{ height: 22 }} />}</Stack>} />
+              })}
+            </Stack>
+            <More shown={qN} total={queue.length} onMore={() => setQN(qN + PAGE)} />
+          </>
         )}
 
         {tab === 1 && (
-          <Stack gap={2}>
-            <CoverageView approved={approved} all={db.facilities} dist={dist} />
-            <Stack direction="row" gap={1} flexWrap="wrap">
-              {bandData.map(b => <Chip key={b.b} label={`${b.name}: ${b.n}`} sx={{ bgcolor: BAND_COLORS[b.b], color: '#fff' }} />)}
+          <>
+            <TextField size="small" placeholder={t('sd.searchName')} value={fSearch} onChange={e => { setFSearch(e.target.value); setFN(PAGE) }} sx={{ mt: 1 }}
+              InputProps={{ startAdornment: <InputAdornment position="start"><Icon name="search" size={20} /></InputAdornment> }} />
+            <FilterRow>
+              <Pick label={t('sd.needs')} value={fNeed} width={190} onChange={v => { setFNeed(v); setFN(PAGE) }} options={[['', t('common.all')], ['repair_priority', t('tag.repair_priority')], ['underused', t('tag.underused')], ['not_women_friendly', t('tag.not_women_friendly')], ['few_scans', t('sd.fewScans')], ['stale', t('sd.stale')]]} />
+              <Pick label={t('sd.condition')} value={fBand} width={130} onChange={v => { setFBand(v); setFN(PAGE) }} options={[['', t('common.all')], ['green', t('sd.band.green')], ['amber', t('sd.band.amber')], ['red', t('sd.band.red')]]} />
+              {dist && <Pick label={t('public.taluka')} value={fTal} width={150} onChange={v => { setFTal(v); setFN(PAGE) }} options={[['', t('common.all')], ...talukasOf(dist).map(x => [x.id, L(x)] as [string, string])]} />}
+              <Pick label={t('public.sport')} value={fSport} width={140} onChange={v => { setFSport(v); setFN(PAGE) }} options={[['', t('common.all')], ...SPORTS.map(s => [s, t(`sport.${s}`)] as [string, string])]} />
+              <Pick label={t('public.type')} value={fType} width={150} onChange={v => { setFType(v); setFN(PAGE) }} options={[['', t('common.all')], ...FACILITY_TYPES.map(s => [s, t(`type.${s}`)] as [string, string])]} />
+            </FilterRow>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{t('sd.found', { count: fac.length })}</Typography>
+            <Stack spacing={1}>
+              {fac.slice(0, fN).map(({ f, r }) => (
+                <Row key={f.id} title={f.name} onClick={() => nav(`/state/review/${f.id}`)} sub={`${where(f)} · ${t(`type.${f.type}`)}`}
+                  right={<Stack alignItems="flex-end" gap={0.5}><BandChip r={r} />{r.tags.filter(x => x !== 'not_women_friendly').map(x => <Typography key={x} variant="caption" color="text.secondary">{t(`tag.${x}`)}</Typography>)}</Stack>} />
+              ))}
             </Stack>
-            <Stack direction="row" gap={2} flexWrap="wrap" alignItems="flex-start">
-              <ChartCard title={t('state.bySport')} icon="sports">
-                <ResponsiveContainer width="100%" height={Math.max(220, sportData.length * 26)}>
-                  <BarChart data={sportData} layout="vertical" margin={{ left: 0, right: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="name" width={92} tick={{ fontSize: 11 }} />
-                    <Tooltip /><Bar dataKey="n" fill={C.blue} radius={[0, 6, 6, 0]} name={t('state.facilities')} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-              <Stack gap={2} sx={{ flex: '1 1 420px', minWidth: 0, '& > .MuiCard-root': { flex: 'none' } }}>
-                <ChartCard title={t('state.byType')} icon="category">
-                  <ResponsiveContainer width="100%" height={Math.max(160, typeData.length * 28)}>
-                    <BarChart data={typeData} layout="vertical" margin={{ left: 0, right: 8 }}><CartesianGrid strokeDasharray="3 3" horizontal={false} /><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="name" width={104} tick={{ fontSize: 11 }} interval={0} /><Tooltip /><Bar dataKey="n" fill={C.orange} radius={[0, 6, 6, 0]} name={t('state.facilities')} /></BarChart>
-                  </ResponsiveContainer>
-                </ChartCard>
-                <ChartCard title={t('state.bands')} icon="health_metrics">
-                  <ResponsiveContainer width="100%" height={150}>
-                    <BarChart data={bandData} layout="vertical" margin={{ left: 0, right: 8 }}><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="name" width={112} tick={{ fontSize: 11 }} interval={0} /><Tooltip />
-                      <Bar dataKey="n" radius={[0, 6, 6, 0]} name={t('state.facilities')}>{bandData.map(b => <Cell key={b.b} fill={BAND_COLORS[b.b]} />)}</Bar></BarChart>
-                  </ResponsiveContainer>
-                </ChartCard>
-              </Stack>
-              <ChartCard title={t('state.checkinsTrend')} icon="trending_up">
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={trend}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" /><YAxis /><Tooltip /><Legend />
-                    <Line dataKey="female" name={t('state.female')} stroke={C.orange} strokeWidth={3} />
-                    <Line dataKey="male" name={t('state.male')} stroke={C.blue} strokeWidth={3} />
-                    <Line dataKey="other" name={t('state.otherNa')} stroke={C.grey} strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartCard>
-              <ChartCard title={t('state.gByCat')} icon="report">
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={gData} layout="vertical" margin={{ left: 0, right: 8 }}><XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="name" width={104} tick={{ fontSize: 10 }} /><Tooltip /><Legend />
-                    <Bar dataKey="overdue" stackId="a" fill="#C62828" name={t('dso.overdue')} />
-                    <Bar dataKey="open" stackId="a" fill={C.orange} name={t('dso.open')} />
-                    <Bar dataKey="resolved" stackId="a" fill={C.green} name={t('dso.resolved')} radius={[0, 6, 6, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-            </Stack>
-          </Stack>
+            <More shown={fN} total={fac.length} onMore={() => setFN(fN + PAGE)} />
+          </>
         )}
 
         {tab === 2 && (
-          <Stack gap={2} sx={{ '& > .MuiCard-root': { flex: 'none' } }}>
-            <CwgReadiness approved={approved} />
-            <Stack direction="row" gap={2} flexWrap="wrap">
-              <ChartCard title={t('state.repairList')} icon="construction">
-                <Stack spacing={1}>
-                  {repair.length === 0 && <Typography color="text.secondary">—</Typography>}
-                  {repair.map(({ f, r }) => <ListRow key={f.id} name={f.name} r={r} onClick={() => nav(`/state/review/${f.id}`)} />)}
-                </Stack>
-              </ChartCard>
-              <ChartCard title={t('state.underusedList')} icon="trending_down">
-                <Stack spacing={1}>
-                  {underused.length === 0 && <Typography color="text.secondary">—</Typography>}
-                  {underused.map(({ f, r }) => <ListRow key={f.id} name={f.name} r={r} onClick={() => nav(`/state/review/${f.id}`)} />)}
-                </Stack>
-              </ChartCard>
+          <>
+            <FilterRow>
+              <Pick label={t('sd.show')} value={dShow} width={180} onChange={setDShow} options={[['all', t('common.all')], ...(dist ? [] : [['notStarted', t('sd.notStarted')] as [string, string]]), ['gaps', dist ? t('sd.talukaGaps') : t('sd.hasGaps')], ['pending', t('sd.hasPending')], ['overdue', t('sd.hasOverdue')]]} />
+              <Pick label={t('sd.sort')} value={dSort} width={170} onChange={setDSort} options={[['name', t('sd.byName')], ['pending', t('sd.mostPending')], ['overdue', t('sd.mostOverdue')], ['fewest', t('sd.fewestFacilities')]]} />
+            </FilterRow>
+            <Stack direction="row" sx={{ px: 1.5, pb: 0.5 }} gap={1}>
+              <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>{dist ? t('public.taluka') : t('public.district')}</Typography>
+              {[t('sd.colApproved'), t('sd.colPending'), t('sd.colOverdue')].map(h => <Typography key={h} variant="caption" color="text.secondary" sx={{ width: 58, textAlign: 'center', lineHeight: 1.2 }}>{h}</Typography>)}
             </Stack>
-          </Stack>
+            <Stack spacing={0.75}>
+              {unitRows.map(u => (
+                <Card key={u.id} sx={{ borderColor: u.overdue ? 'error.light' : undefined }}>
+                  <CardActionArea onClick={dist ? undefined : () => chooseDistrict(u.id)} disabled={!!dist} sx={{ px: 1.5, py: 1, display: 'flex', gap: 1, justifyContent: 'flex-start', alignItems: 'center' }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography fontWeight={500} sx={{ lineHeight: 1.25 }}>{u.name}</Typography>
+                      {u.state === 'notStarted' && <Typography variant="caption" color="text.secondary">{t('sd.notStarted')}</Typography>}
+                      {u.state === 'none' && <Typography variant="caption" color="error.main">{t('cov.none')}</Typography>}
+                      {u.state === 'onlyPoor' && <Typography variant="caption" color="warning.dark">{t('cov.onlyPoor')}</Typography>}
+                      {!dist && u.state !== 'notStarted' && u.empty > 0 && <Typography variant="caption" color="error.main">{t('sd.talukasWithout', { count: u.empty, total: u.talukas })}</Typography>}
+                    </Box>
+                    {[u.approved, u.pending, u.overdue].map((n, i) => (
+                      <Typography key={i} sx={{ width: 58, textAlign: 'center', fontWeight: n && i === 2 ? 700 : 500, color: !n ? 'text.disabled' : i === 2 ? 'error.main' : 'text.primary' }}>{n}</Typography>
+                    ))}
+                  </CardActionArea>
+                </Card>
+              ))}
+              {unitRows.length === 0 && <Empty text={t('sd.nothing')} />}
+            </Stack>
+          </>
         )}
 
         {tab === 3 && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.25 }}>
-            {[...db.grievances].sort((a, b) => (a.status === b.status ? a.at.localeCompare(b.at) : a.status === 'open' ? -1 : 1)).map(g => {
-              const d = daysSince(g.at)
-              const od = g.status === 'open' && d > ESCALATE_AFTER_DAYS
-              const fac = db.facilities.find(x => x.id === g.facilityId)
-              return (
-                <Card key={g.id} sx={{ borderColor: od ? 'error.main' : undefined, bgcolor: od ? '#FFF7F7' : undefined }}>
-                  <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                    <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
-                      <Typography fontWeight={500} sx={{ flex: 1, minWidth: 0 }}>{t(`gcat.${g.category}`)}</Typography>
-                      {g.status === 'resolved' ? <Chip size="small" color="success" label={t('dso.resolved')} /> : <Chip size="small" color={od ? 'error' : 'warning'} label={od ? t('dso.overdue') : t('dso.open')} />}
-                    </Stack>
-                    <Typography variant="body2">{fname(g.facilityId)}</Typography>
-                    <Typography variant="caption" color="text.secondary">{g.ref} · {fac ? placeName(districtOf(fac.district), i18n.language) : ''} · {t('dso.daysOpen', { count: d })}</Typography>
-                    {g.description && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{g.description}</Typography>}
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </Box>
+          <>
+            <FilterRow>
+              <Pick label={t('sd.show')} value={gStatus} width={150} onChange={v => { setGStatus(v); setGN(PAGE) }} options={[['open', t('sd.openAll')], ['overdue', t('dso.overdue')], ['resolved', t('dso.resolved')], ['all', t('common.all')]]} />
+              <Pick label={t('qr.category')} value={gCat} width={190} onChange={v => { setGCat(v); setGN(PAGE) }} options={[['', t('common.all')], ...GRIEVANCE_CATEGORIES.map(c => [c, t(`gcat.${c}`)] as [string, string])]} />
+            </FilterRow>
+            <Stack spacing={1}>
+              {gList.length === 0 && <Empty text={t('sd.nothing')} />}
+              {gList.slice(0, gN).map(g => {
+                const d = daysSince(g.at)
+                const od = g.status === 'open' && d > ESCALATE_AFTER_DAYS
+                const f = fname(g.facilityId)
+                return <Row key={g.id} alert={od} title={t(`gcat.${g.category}`)} onClick={f ? () => nav(`/state/review/${f.id}`) : undefined}
+                  sub={`${f?.name || ''} · ${f ? where(f) : ''} · ${g.status === 'resolved' ? t('dso.resolved') : t('dso.daysOpen', { count: d })}`}
+                  right={g.status === 'resolved' ? <Chip size="small" color="success" label={t('dso.resolved')} /> : <Chip size="small" color={od ? 'error' : 'warning'} label={od ? t('dso.overdue') : t('dso.open')} />} />
+              })}
+            </Stack>
+            <More shown={gN} total={gList.length} onMore={() => setGN(gN + PAGE)} />
+          </>
         )}
 
         {tab === 4 && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(3, 1fr)' }, gap: 1.25 }}>
-            {progress.map(p => {
-              const fig = (label: string, value: string | number) => (
-                <Box><Typography sx={{ fontSize: 20, fontWeight: 500, lineHeight: 1.2 }}>{value}</Typography><Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2, display: 'block' }}>{label}</Typography></Box>
-              )
-              return (
-                <Card key={p.tal.id}>
-                  <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                    <Typography fontWeight={500} sx={{ mb: 1 }}>{i18n.language === 'gu' ? p.tal.gu : p.tal.en}</Typography>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.25 }}>
-                      {fig(t('state.mapped'), p.mapped)}
-                      {fig(t('state.approved'), p.approved)}
-                      {fig(t('state.returnRate'), p.returnedCount)}
-                      {fig(t('state.onTime'), p.gTotal ? `${p.onTime}/${p.gTotal}` : '—')}
-                      {fig(t('state.lastActivity'), p.last ? `${daysSince(p.last)} ${t('common.days')}` : '—')}
-                    </Box>
-                  </CardContent>
+          <>
+            <FilterRow>
+              <Pick label={t('sd.show')} value={cStatus} width={170} onChange={setCStatus} options={[['', `${t('common.all')} (${CWG_SPORTS.length})`], ['ready', `${t('sd.cwg.ready')} (${cwgCount('ready')})`], ['repair', `${t('sd.cwg.repair')} (${cwgCount('repair')})`], ['gap', `${t('sd.cwg.gap')} (${cwgCount('gap')})`]]} />
+            </FilterRow>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>{t('sd.cwg.howTo')}</Typography>
+            <Stack spacing={0.75}>
+              {cwgRows.map(row => (
+                <Card key={row.s}>
+                  <CardActionArea onClick={() => setCOpen(cOpen === row.s ? null : row.s)} disabled={!row.venues.length} sx={{ px: 1.5, py: 1.1, display: 'flex', gap: 1, justifyContent: 'flex-start', alignItems: 'center' }}>
+                    <Typography fontWeight={500} sx={{ flex: 1 }}>{t(`sport.${row.s}`)}</Typography>
+                    <Typography variant="body2" color="text.secondary">{t('sd.cwg.venues', { count: row.venues.length })}</Typography>
+                    <Chip size="small" color={cwgStyle[row.status]} label={t(`sd.cwg.${row.status}`)} sx={{ minWidth: 92 }} />
+                    {row.venues.length > 0 && <Icon name={cOpen === row.s ? 'expand_less' : 'expand_more'} color="#5B6B7E" />}
+                  </CardActionArea>
+                  {cOpen === row.s && (
+                    <Stack sx={{ px: 1.5, pb: 1.25 }} spacing={0.75}>
+                      {row.venues.map(v => (
+                        <Stack key={v.f.id} direction="row" alignItems="center" gap={1} onClick={() => nav(`/state/review/${v.f.id}`)} sx={{ cursor: 'pointer', p: 1, borderRadius: '10px', bgcolor: '#F3F6FA' }}>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography variant="body2" fontWeight={500}>{v.f.name}</Typography>
+                            <Typography variant="caption" color="text.secondary">{t(`cwg.${v.f.cwg}`)}</Typography>
+                          </Box>
+                          <BandChip r={v.r} />
+                        </Stack>
+                      ))}
+                    </Stack>
+                  )}
                 </Card>
-              )
-            })}
-          </Box>
+              ))}
+            </Stack>
+          </>
         )}
 
         <Box sx={{ mt: 4, textAlign: 'right' }}>
@@ -288,22 +342,3 @@ export default function StateDashboard() {
     </>
   )
 }
-
-function ListRow({ name, r, onClick }: { name: string; r: ReturnType<typeof computeScore>; onClick: () => void }) {
-  const { t } = useTranslation()
-  const c = r.pillars[0].value, u = r.pillars[1].value
-  return (
-    <Card variant="outlined">
-      <CardActionArea onClick={onClick} sx={{ p: 1.25, display: 'flex', gap: 1.5, justifyContent: 'flex-start' }}>
-        <ScoreBadge r={r} size={38} />
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography fontWeight={500} noWrap>{name}</Typography>
-          <Typography variant="caption" color="text.secondary">{t('state.condition')} {c != null ? Math.round(c) : '–'} · {t('state.use')} {u != null ? Math.round(u) : '–'}</Typography>
-        </Box>
-        <TagChips r={{ ...r, tags: r.tags.filter(x => x !== 'not_women_friendly') }} />
-      </CardActionArea>
-    </Card>
-  )
-}
-
-export { Section }

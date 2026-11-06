@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, Box, Button, Card, CardContent, Chip, Container, FormControl, FormControlLabel, IconButton, InputLabel, LinearProgress, MenuItem, Select, Stack, Switch, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Card, CardContent, Chip, Container, FormControl, FormControlLabel, IconButton, InputLabel, LinearProgress, MenuItem, Select, Snackbar, Stack, Switch, TextField, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Icon, TopBar, Stars, ScoreBars, ScoreBadge, TagChips, StatusChip, useCurrentUser, BottomBar } from '../components/ui'
@@ -98,7 +98,7 @@ export default function DsoWizard() {
     const changed = existing ? (Object.keys(f) as (keyof Facility)[]).filter(k => JSON.stringify(f[k]) !== JSON.stringify(existing[k]) && k !== 'updatedAt') : []
     if (andSubmit) {
       const m = missing()
-      if (m.length) { setMsg(t('wiz.missing', { list: m.join(', ') })); window.scrollTo(0, 0); return }
+      if (m.length) { setMsg(t('wiz.missing', { list: m.join(', ') })); return }
       saveFacility(f, user.id, changed as string[])
       submitFacility(f.id, user.id)
       nav('/dso')
@@ -338,7 +338,6 @@ export default function DsoWizard() {
         </Stack>
         {lastReturned && step === 0 && !fixSteps.has(0) && <Box sx={{ mb: 2 }}><ReturnNote review={lastReturned} /></Box>}
         {lastReturned && fixSteps.has(step) && <Box sx={{ mb: 2 }}><ReturnNote review={lastReturned} /></Box>}
-        {msg && <Alert severity={msg === t('wiz.saved') ? 'success' : 'warning'} onClose={() => setMsg('')} sx={{ mb: 2 }}>{msg}</Alert>}
         <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>
           <Typography variant="h3" sx={{ flex: 1 }}>{steps[step]} <Typography component="span" variant="body2" color="text.secondary">· {step + 1}/{steps.length}</Typography></Typography>
           {existing && <Box sx={{ display: { xs: 'block', sm: 'none' } }}><StatusChip status={f.status} /></Box>}
@@ -356,6 +355,10 @@ export default function DsoWizard() {
             : <Button variant="contained" color="secondary" onClick={() => save(true)} endIcon={<Icon name="send" />} sx={{ flex: 1.4, px: 1 }}>{t('common.submit')}</Button>}
         </Stack>
       </BottomBar>
+
+      <Snackbar open={!!msg} autoHideDuration={msg === t('wiz.saved') ? 2500 : 6000} onClose={() => setMsg('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }} sx={{ bottom: { xs: 'calc(84px + env(safe-area-inset-bottom))' } }}>
+        <Alert severity={msg === t('wiz.saved') ? 'success' : 'warning'} variant="filled" onClose={() => setMsg('')} sx={{ width: '100%' }}>{msg}</Alert>
+      </Snackbar>
 
       <CameraCapture open={cam} onClose={() => setCam(false)} onSave={addPhoto} facilityName={f.name} officerName={user.fullName} officerId={user.id}
         taluka={f.taluka} ward={f.ward} district={districtOf(f.district)} pin={f.lat != null ? { lat: f.lat, lng: f.lng! } : null}

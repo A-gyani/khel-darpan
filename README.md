@@ -39,9 +39,9 @@ Login page photo: put a file at `public/brand/login-photo.jpg`.
 
 ### Connect Supabase (one time)
 1. supabase.com → sign up (free, no card) → **New project** (region: Mumbai). Wait ~2 minutes.
-2. **SQL Editor → New query**: paste  → Run. Then paste  → Run.
+2. **SQL Editor → New query**: paste `supabase/01_schema.sql` → Run. Then paste `supabase/02_demo_logins.sql` → Run.
 3. **Project Settings → API**: copy the **Project URL** and the **anon public** key. (Never share the service_role key.)
-4. Put them in  (local) and in GitHub → repo → Settings → Secrets → Actions as  and .
+4. Put them in `.env` (local) and in GitHub → repo → Settings → Secrets → Actions as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 5. Log in as the State officer → Dashboard → bottom: **Load demo data into the database**.
 
 Note: the prototype loads all rows a user may see; at state scale (34 districts) lists should be fetched page by page from the server.

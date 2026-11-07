@@ -1,7 +1,9 @@
 // Map wrapper. Uses OpenStreetMap via Leaflet; swap this file to change provider (e.g. Google Maps).
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
-import { useEffect } from 'react'
+import 'leaflet.markercluster'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import { useEffect, useRef } from 'react'
 
 // The map is locked to Gujarat. OpenStreetMap tiles draw international borders by OSM's own policy,
 // which differs from the official map of India; at zoom 7+ inside Gujarat those borders are never in view.
@@ -42,6 +44,38 @@ function Fit({ pins, center, focus }: { pins: MapPin[]; center?: [number, number
   return null
 }
 
+// Nearby pins are grouped into one circle with a number; tapping it zooms in and splits it.
+// From street zoom (15) every facility shows on its own; facilities at the same spot fan out in a ring.
+function clusterIcon(c: L.MarkerCluster) {
+  const n = c.getChildCount()
+  const s = n < 10 ? 36 : n < 50 ? 42 : 50
+  return L.divIcon({ className: '', html: `<div class="ks-cluster" style="width:${s}px;height:${s}px">${n}</div>`, iconSize: [s, s] })
+}
+function ClusteredPins({ pins, onPinClick }: { pins: MapPin[]; onPinClick?: (id: string) => void }) {
+  const map = useMap()
+  const group = useRef<L.MarkerClusterGroup | null>(null)
+  const click = useRef(onPinClick)
+  click.current = onPinClick
+  useEffect(() => {
+    const g = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 48, disableClusteringAtZoom: 15, spiderfyOnMaxZoom: true, iconCreateFunction: clusterIcon })
+    group.current = g
+    map.addLayer(g)
+    return () => { map.removeLayer(g); group.current = null }
+  }, [map])
+  const key = pins.map(p => `${p.id}:${p.lat}:${p.lng}:${p.color}:${p.icon}`).join('|')
+  useEffect(() => {
+    const g = group.current
+    if (!g) return
+    g.clearLayers()
+    g.addLayers(pins.map(p => {
+      const m = L.marker([p.lat, p.lng], { icon: pinIcon(p.color, p.icon), title: p.label })
+      m.on('click', () => click.current && click.current(p.id))
+      return m
+    }))
+  }, [key]) // eslint-disable-line
+  return null
+}
+
 function ClickHandler({ onClick }: { onClick?: (lat: number, lng: number) => void }) {
   useMapEvents({ click: e => onClick && onClick(e.latlng.lat, e.latlng.lng) })
   return null
@@ -67,7 +101,8 @@ export function MapView({ pins, onPinClick, height = '100%', draggablePinId, onD
       <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <Fit pins={pins} center={center} focus={focus} />
       <ClickHandler onClick={onMapClick} />
-      {pins.map(p => (
+      {!draggablePinId && pins.length > 1 && <ClusteredPins pins={pins} onPinClick={onPinClick} />}
+      {(draggablePinId || pins.length <= 1) && pins.map(p => (
         <Marker key={p.id} position={[p.lat, p.lng]} icon={pinIcon(p.color, p.icon, p.id === draggablePinId)} title={p.label}
           draggable={p.id === draggablePinId}
           eventHandlers={{

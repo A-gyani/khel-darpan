@@ -9,5 +9,6 @@ body { background: #F7F9FC; -webkit-tap-highlight-color: transparent; }
 .ms.fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .leaflet-container { font-family: inherit; }
 .ks-pin { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; }
+.ks-cluster { border-radius: 50%; background: #1B6FB8; color: #fff; font: 600 15px/1 Roboto, Arial, sans-serif; display:flex; align-items:center; justify-content:center; border: 3px solid #fff; box-shadow: 0 0 0 5px rgba(27,111,184,.28), 0 2px 6px rgba(0,0,0,.3); }
 .ks-pin span { transform: rotate(45deg); color: #fff; font-size: 18px; }
 @media print { .no-print { display: none !important; } body { background: #fff; } }

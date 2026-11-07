@@ -56,7 +56,7 @@ export default function Poster() {
             ))}
           </Stack>
           <Box sx={{ flex: 1 }} />
-          <Typography variant="caption" color="text.secondary">ID: {f.id} · {gu.app.dept} / {en.app.dept}</Typography>
+          <Typography variant="caption" color="text.secondary">ID: {f.id}</Typography>
         </Box>
         </Box>
       </Box>

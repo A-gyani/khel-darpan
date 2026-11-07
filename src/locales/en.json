@@ -64,6 +64,8 @@
     "otpError": "Wrong OTP",
     "noUser": "This mobile number is not registered",
     "demoOtp": "Demo mode: OTP is {{otp}}",
+    "photoVeer": "Veer Savarkar Sports Complex, Ahmedabad",
+    "photoRiver": "Riverfront Sports Complex, Ahmedabad",
     "photoSpace": "Photo space",
     "photoHint": "Add a facility photo here",
     "demoUsers": "Demo logins are listed in the README",

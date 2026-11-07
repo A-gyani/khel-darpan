@@ -7,16 +7,30 @@ import { login, phoneRegistered } from '../data/store'
 import { DEMO_OTP } from '../lib/constants'
 import { home } from '../lib/routes'
 
-// Put the login photo at public/brand/login-photo.jpg — until then a placeholder is shown.
+// Login photo: a collage of Veer Savarkar and Riverfront sports complexes (Ahmedabad), blended into one image.
+// Side by side on phones (login-collage-wide.jpg), stacked on computers (login-collage-tall.jpg). If it fails to load, a placeholder is shown.
+function PhotoLabel({ text, sx }: { text: string; sx: object }) {
+  return (
+    <Typography sx={{ position: 'absolute', zIndex: 1, maxWidth: { xs: '45%', md: '70%' }, px: 1, py: 0.5, borderRadius: '8px', bgcolor: 'rgba(0,0,0,.55)', color: '#fff', fontSize: { xs: 11, md: 13 }, lineHeight: 1.3, ...sx }}>{text}</Typography>
+  )
+}
 function PhotoSpace() {
   const { t } = useTranslation()
   const [missing, setMissing] = useState(false)
   return (
     <Box sx={{ position: 'relative', flex: { md: 1 }, height: { xs: '30dvh', md: 'auto' }, minHeight: { xs: 180, md: '100vh' }, maxHeight: { xs: 280, md: 'none' }, bgcolor: '#E3ECF6', overflow: 'hidden', flexShrink: 0 }}>
       {!missing && (
-        <Box component="img" src="./brand/login-photo.jpg" alt="" onError={() => setMissing(true)}
-          sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        <picture>
+          <source media="(min-width: 900px)" srcSet="./brand/login-collage-tall.jpg" />
+          <Box component="img" src="./brand/login-collage-wide.jpg" alt="" onError={() => setMissing(true)}
+            sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        </picture>
       )}
+      {!missing && (<>
+        {/* name of each photo, at the top of its own half (phone: left / right; computer: top / bottom) */}
+        <PhotoLabel text={t('login.photoVeer')} sx={{ top: { xs: 56, md: 72 }, left: { xs: 8, md: 16 } }} />
+        <PhotoLabel text={t('login.photoRiver')} sx={{ top: { xs: 56, md: '57%' }, right: { xs: 8, md: 'auto' }, left: { md: 16 } }} />
+      </>)}
       {missing && (
         <Stack alignItems="center" justifyContent="center" sx={{ position: 'absolute', inset: 0, color: '#5B6B7E', border: '2px dashed #A9BBD0', m: 2, borderRadius: '16px' }}>
           <Icon name="add_photo_alternate" size={44} />
@@ -83,10 +97,6 @@ export default function Login() {
       <Stack sx={{ width: { xs: '100%', md: 480 }, px: { xs: 2, md: 5 }, py: { xs: 2, md: 5 }, pb: 'calc(16px + env(safe-area-inset-bottom))', justifyContent: { md: 'center' }, mx: 'auto', maxWidth: 520, bgcolor: 'background.default' }}>
         <Stack direction="row" alignItems="center" gap={1.5} sx={{ mb: 2 }}>
           <Box component="img" src="./brand/kd-mark.png" alt="Khel Darpan" sx={{ height: { xs: 44, md: 56 }, flexShrink: 0 }} />
-          <Box sx={{ flex: 1 }} />
-          <Box sx={{ height: 44, width: 64, flexShrink: 0, border: '1px dashed #C4CFDB', borderRadius: '10px', display: 'grid', placeItems: 'center' }}>
-            <Typography variant="caption" color="text.secondary" align="center" sx={{ fontSize: 10, lineHeight: 1.1 }}>Govt.<br />logo</Typography>
-          </Box>
         </Stack>
 
         <Card>

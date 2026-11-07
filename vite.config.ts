@@ -13,7 +13,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['brand/sag-logo.png', 'icons/apple-touch-icon.png'],
+      includeAssets: ['brand/kd-mark.png', 'icons/favicon-64.png', 'icons/apple-touch-icon.png'],
       manifest: {
         name: 'Khel Darpan Gujarat',
         short_name: 'Khel Darpan',

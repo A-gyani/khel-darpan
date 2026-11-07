@@ -43,7 +43,7 @@ export function TopBar({ title, back, actions }: { title?: string; back?: string
         {back ? (
           <IconButton aria-label={t('common.back')} onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))}><Icon name="arrow_back" /></IconButton>
         ) : (
-          <Box component="img" src="./brand/sag-logo.png" alt="SAG" onClick={() => nav('/map')} sx={{ height: { xs: 32, sm: 36 }, width: 'auto', mx: { xs: 1, sm: 0 }, cursor: 'pointer', flexShrink: 0 }} />
+          <Box component="img" src="./brand/kd-mark.png" alt="Khel Darpan" onClick={() => nav('/map')} sx={{ height: { xs: 32, sm: 36 }, width: 'auto', mx: { xs: 1, sm: 0 }, cursor: 'pointer', flexShrink: 0 }} />
         )}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontSize: { xs: '1rem', sm: '1.15rem' }, fontWeight: 500, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>

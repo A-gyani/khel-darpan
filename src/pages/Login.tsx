@@ -82,8 +82,8 @@ export default function Login() {
       </Box>
       <Stack sx={{ width: { xs: '100%', md: 480 }, px: { xs: 2, md: 5 }, py: { xs: 2, md: 5 }, pb: 'calc(16px + env(safe-area-inset-bottom))', justifyContent: { md: 'center' }, mx: 'auto', maxWidth: 520, bgcolor: 'background.default' }}>
         <Stack direction="row" alignItems="center" gap={1.5} sx={{ mb: 2 }}>
-          <Box component="img" src="./brand/sag-logo.png" alt="Sports Authority of Gujarat" sx={{ height: { xs: 44, md: 56 }, flexShrink: 0 }} />
-          <Typography variant="body2" color="text.secondary" sx={{ flex: 1, lineHeight: 1.3 }}>{t('app.dept')}</Typography>
+          <Box component="img" src="./brand/kd-mark.png" alt="Khel Darpan" sx={{ height: { xs: 44, md: 56 }, flexShrink: 0 }} />
+          <Box sx={{ flex: 1 }} />
           <Box sx={{ height: 44, width: 64, flexShrink: 0, border: '1px dashed #C4CFDB', borderRadius: '10px', display: 'grid', placeItems: 'center' }}>
             <Typography variant="caption" color="text.secondary" align="center" sx={{ fontSize: 10, lineHeight: 1.1 }}>Govt.<br />logo</Typography>
           </Box>

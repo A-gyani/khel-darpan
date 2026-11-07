@@ -34,7 +34,7 @@ export default function Poster() {
         <Box sx={{ transform: `scale(${scale})`, transformOrigin: 'top center', flexShrink: 0, '@media print': { transform: 'none' } }}>
         <Box sx={{ width: '210mm', minHeight: '297mm', bgcolor: '#fff', boxShadow: 3, p: '14mm', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', '@media print': { boxShadow: 'none' } }}>
           <Stack direction="row" alignItems="center" gap={2} sx={{ alignSelf: 'stretch', justifyContent: 'center' }}>
-            <Box component="img" src="./brand/sag-logo.png" alt="" sx={{ height: 70 }} />
+            <Box component="img" src="./brand/kd-mark.png" alt="" sx={{ height: 70 }} />
             <Box sx={{ textAlign: 'left' }}>
               <Typography variant="h3" color="primary.dark">{gu.app.name}</Typography>
               <Typography variant="h4" color="text.secondary">{en.app.name}</Typography>

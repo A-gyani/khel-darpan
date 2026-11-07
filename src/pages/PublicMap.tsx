@@ -96,7 +96,7 @@ export default function PublicMap() {
       {/* header: brand + language + official login, then search, then filter chips */}
       <Box sx={{ px: { xs: 1.5, sm: 2 }, pt: 'calc(8px + env(safe-area-inset-top))', pb: 1, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', zIndex: 1100 }}>
         <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}>
-          <Box component="img" src="./brand/sag-logo.png" alt="Sports Authority of Gujarat" sx={{ height: { xs: 34, sm: 40 }, flexShrink: 0 }} />
+          <Box component="img" src="./brand/kd-mark.png" alt="Khel Darpan" sx={{ height: { xs: 34, sm: 40 }, flexShrink: 0 }} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography sx={{ fontSize: { xs: '0.98rem', sm: '1.15rem' }, fontWeight: 700, lineHeight: 1.15, color: 'primary.dark' }}>{t('app.name')}</Typography>
             <Typography variant="caption" color="text.secondary" noWrap sx={{ lineHeight: 1.2, display: { xs: 'none', sm: 'block' } }}>{t('app.tagline')}</Typography>

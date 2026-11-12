@@ -1,0 +1,21 @@
+# Keeps the free Supabase project from pausing for inactivity: reads the public facility list twice a week.
+# Read-only (same request a citizen's phone makes); changes nothing in the database.
+name: Keep database awake
+on:
+  schedule:
+    - cron: '30 3 * * 1,4'   # Monday and Thursday, 09:00 IST
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read public facilities
+        env:
+          URL: ${{ secrets.VITE_SUPABASE_URL }}
+          KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          code=$(curl -s -o body.json -w '%{http_code}' "$URL/rest/v1/public_facilities?select=id&limit=5" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          echo "HTTP $code"; cat body.json; echo
+          test "$code" = "200"

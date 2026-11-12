@@ -68,7 +68,12 @@
     "photoRiver": "Riverfront Sports Complex, Ahmedabad",
     "photoSpace": "Photo space",
     "photoHint": "Add a facility photo here",
-    "demoUsers": "Demo logins are listed in the README",
+    "demoUsers": "Demo logins for reviewers",
+    "demoTap": "Tap a row to fill it in",
+    "demoPass": "Password: {{pw}}   ·   OTP: {{otp}}",
+    "demoDso": "District Sports Officer, {{d}}",
+    "demoState": "State officer (all Gujarat)",
+    "demoAhd": "Ahmedabad", "demoSurat": "Surat", "demoGnr": "Gandhinagar",
     "backToSearch": "Search facilities"
   },
   "role": {

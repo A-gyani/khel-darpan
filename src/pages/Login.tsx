@@ -7,6 +7,15 @@ import { login, phoneRegistered } from '../data/store'
 import { DEMO_OTP } from '../lib/constants'
 import { home } from '../lib/routes'
 
+// Demo officer accounts (same as supabase/02_demo_logins.sql), shown on the sign-in card for reviewers.
+const DEMO_PASSWORD = 'demo1234'
+const DEMO_LOGINS = [
+  { email: 'state.demo@demo.in', phone: '9000000002', district: '' },
+  { email: 'dso.ahmedabad@demo.in', phone: '9000000001', district: 'login.demoAhd' },
+  { email: 'dso.surat@demo.in', phone: '9000000004', district: 'login.demoSurat' },
+  { email: 'dso.gandhinagar@demo.in', phone: '9000000005', district: 'login.demoGnr' },
+]
+
 // Login photo: a collage of Veer Savarkar and Riverfront sports complexes (Ahmedabad), blended into one image.
 // Side by side on phones (login-collage-wide.jpg), stacked on computers (login-collage-tall.jpg). If it fails to load, a placeholder is shown.
 function PhotoLabel({ text, sx }: { text: string; sx: object }) {
@@ -131,6 +140,23 @@ export default function Login() {
                 <Button variant="text" onClick={() => { setOtpSent(false); setOtp('') }}>{t('common.back')}</Button>
               </Stack>
             )}
+
+            {/* Demo logins for reviewers: tap a row to fill the form */}
+            <Box sx={{ mt: 2.5, p: 1.5, borderRadius: '12px', bgcolor: 'action.hover' }}>
+              <Typography variant="subtitle2">{t('login.demoUsers')}</Typography>
+              <Typography variant="caption" color="text.secondary">{t('login.demoTap')}</Typography>
+              <Stack sx={{ mt: 1 }}>
+                {DEMO_LOGINS.map(d => (
+                  <Box key={d.email} component="button" type="button"
+                    onClick={() => { setErr(''); if (tab === 0) { setEmail(d.email); setPassword(DEMO_PASSWORD) } else { setPhone(d.phone); setOtpSent(false); setOtp('') } }}
+                    sx={{ all: 'unset', cursor: 'pointer', display: 'block', px: 1, py: 0.75, borderRadius: '8px', '&:hover, &:focus-visible': { bgcolor: 'action.selected' } }}>
+                    <Typography variant="body2" fontWeight={500}>{d.district ? t('login.demoDso', { d: t(d.district) }) : t('login.demoState')}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>{tab === 0 ? d.email : '+91 ' + d.phone}</Typography>
+                  </Box>
+                ))}
+              </Stack>
+              <Typography variant="body2" sx={{ mt: 1, px: 1, fontFamily: 'monospace' }}>{t('login.demoPass', { pw: DEMO_PASSWORD, otp: DEMO_OTP })}</Typography>
+            </Box>
           </CardContent>
         </Card>
 

@@ -6,5 +6,8 @@ import './i18n'
 import App from './App'
 import { initStore } from './data/store'
 
+import { startVisitCounter } from './lib/analytics'
+
 initStore()
+startVisitCounter()
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>)
